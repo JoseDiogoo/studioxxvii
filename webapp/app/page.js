@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import LogoBadge from "./LogoBadge";
 import SiteFooter from "./SiteFooter";
+import MobileMenu from "./MobileMenu";
+import ToolsWheel from "./ToolsWheel";
 import styles from "./home.module.css";
 
 const SERVICOS = [
@@ -51,7 +53,10 @@ function Cabecalho() {
         <li><a href="#galeria">Galeria</a></li>
         <li><a href="#localizacao">Localização</a></li>
       </ul>
-      <Link href="/marcar" className={styles.botaoOuro}>Marcar horário</Link>
+      <div className={styles.headerDireita}>
+        <Link href="/marcar" className={styles.botaoOuro}>Marcar horário</Link>
+        <MobileMenu />
+      </div>
     </header>
   );
 }
@@ -64,7 +69,9 @@ function Hero() {
       </div>
       <div className={styles.heroConteudo}>
         <div className={styles.heroBadge}>
-          <LogoBadge size={104} />
+          <ToolsWheel size={300}>
+            <LogoBadge size={130} />
+          </ToolsWheel>
         </div>
         <span className={styles.heroKicker}>Barbearia · Alcobaça</span>
         <h1 className={styles.heroTitulo}>

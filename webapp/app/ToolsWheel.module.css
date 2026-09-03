@@ -1,0 +1,51 @@
+.palco {
+  position: relative;
+  margin: 0 auto;
+  perspective: 900px;
+}
+
+.anel {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: girar 36s linear infinite;
+}
+
+.item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dourado);
+  opacity: 0.8;
+}
+
+.icone {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.centro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+@keyframes girar {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anel {
+    animation: none;
+  }
+}
