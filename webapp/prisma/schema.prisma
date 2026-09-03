@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -99,7 +99,6 @@ enum MetodoPagamento {
 }
 
 enum StatusAgendamento {
-  PENDENTE_PAGAMENTO
   CONFIRMADO
   CANCELADO
   CONCLUIDO
@@ -122,8 +121,6 @@ model Agendamento {
   metodoPagamento MetodoPagamento?
   observacoes     String?
   status          StatusAgendamento @default(CONFIRMADO)
-  // Id do pedido de pagamento MB Way (ifthenpay) associado a este agendamento.
-  referenciaPagamento String?
   // Id do evento correspondente no Google Calendar do colaborador (sincronização one-way).
   googleEventId       String?
   createdAt       DateTime @default(now())
