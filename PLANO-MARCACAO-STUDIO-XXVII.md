@@ -101,6 +101,32 @@ SQLite grava num ficheiro local. Isso **não funciona bem em hosts serverless "s
 - Lista de serviços/preços reais do Studio XXVII, quando o dono a disponibilizar.
 - Logótipo/fotos reais para substituir o hero placeholder.
 
+## Base de dados: troca de SQLite para PostgreSQL (2026-09-03)
+
+Decisão do dono do negócio: quer poder abrir o DBeaver e ver/editar a BD
+diretamente (host/porta/user/password), o que o ficheiro SQLite não permite
+bem em produção (é só um ficheiro na VPS, não um servidor a que se liga por
+rede). Trocado `datasource db { provider = "sqlite" }` por `"postgresql"` no
+`prisma/schema.prisma`; o Prisma mantém-se como ORM/migrações — só muda o
+motor da BD por baixo, não a forma como o código a usa.
+
+- Migrações antigas (geradas para SQLite) foram substituídas por uma única
+  migração `init` gerada de raiz para PostgreSQL — não havia dados reais em
+  produção, só seed, por isso não houve necessidade de migrar dados.
+- **Localmente**: instalado PostgreSQL 17 na máquina de desenvolvimento
+  (serviço Windows `postgresql-x64-17`, porta 5432), com um role e uma base de
+  dados dedicados (`studioxxvii`), separados do superuser. `DATABASE_URL` no
+  `.env` local aponta para aí.
+- **Em produção**: o plano mantém-se — PostgreSQL corre na mesma VPS que a
+  app (ver `webapp/deploy/DEPLOY.md`, secção 1). Continua a ser preciso um
+  host com disco persistente (VPS própria), tal como acontecia com o SQLite —
+  isto não muda com PostgreSQL self-hosted. O que muda é que, havendo um
+  servidor de BD a sério, fica aberta a porta para no futuro usar Postgres
+  gerido (ex. Neon/Supabase/Railway) e hospedar o Next.js em serverless
+  (Vercel), se um dia fizer sentido crescer nessa direção.
+- Acesso ao DBeaver em produção (raro — o dia a dia é sempre via `/equipa` no
+  browser): túnel SSH para a VPS, nunca abrir a porta 5432 ao exterior.
+
 ## Google Calendar, pagamento antecipado, reagendamento e deploy (implementado em 2026-08-26)
 
 Decisões tomadas e já implementadas no código (todas com fallback automático:
@@ -126,22 +152,21 @@ sem as credenciais externas configuradas, o comportamento fica igual ao de antes
   cliente com o novo horário. Falha a enviar a mensagem não desfaz a alteração
   (só fica registada em log). Variáveis: `TWILIO_ACCOUNT_SID`,
   `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`.
-- **Pagamento antecipado (MB Way via ifthenpay)**: se `IFTHENPAY_MBWAY_KEY` e
-  `IFTHENPAY_ANTIPHISHING_KEY` estiverem definidas, `/marcar` passa a criar o(s)
-  agendamento(s) com estado `PENDENTE_PAGAMENTO` e a disparar um pedido MB Way;
-  o horário fica reservado só 10 minutos (liberta-se sozinho se não for pago). O
-  callback `/api/pagamentos/callback` confirma o pagamento, muda o estado para
-  `CONFIRMADO`, sincroniza o Google Calendar e envia WhatsApp de confirmação ao
-  cliente. Sem essas variáveis, o comportamento é o de sempre (marcação
-  confirmada de imediato, sem exigir pagamento). Reembolso de um reagendamento
-  recusado pelo cliente fica pensado como **crédito para a próxima marcação**
-  em vez de devolução automática — mais simples de operar; devolução real fica
-  como exceção manual.
+- ~~Pagamento antecipado (MB Way via ifthenpay)~~ — **revertido em 2026-09-03.**
+  Decisão do dono do negócio: o cliente **nunca paga no ato da marcação**, só
+  depois de ter o corte feito na barbearia. Removido do código: `lib/pagamentos.js`,
+  a rota `/api/pagamentos/callback`, a rota de polling `/api/marcar/estado`, o
+  estado `PENDENTE_PAGAMENTO` (removido do enum `StatusAgendamento` e do schema
+  Prisma, com migração `remover_pagamento_antecipado`) e o campo
+  `referenciaPagamento`. `/marcar` volta a confirmar a marcação de imediato,
+  sempre, sem exigir nada do cliente além dos dados de contacto. O pagamento
+  continua a ser registado manualmente pela equipa em `/equipa` (campo `pago` +
+  `metodoPagamento`, que ainda inclui "MB Way" como opção — cobre o caso de o
+  cliente pagar por MB Way à boca da caixa, não antecipado).
 
-### Por fazer para ativar de vez estas integrações
-1. Criar conta ifthenpay, ativar MB Way, copiar as duas chaves para o `.env`.
-2. Criar conta Twilio (ou WhatsApp Cloud API direta, mais barata a médio prazo),
+### Por fazer para ativar de vez as integrações que restam
+1. Criar conta Twilio (ou WhatsApp Cloud API direta, mais barata a médio prazo),
    aprovar o número/templates de WhatsApp, copiar credenciais para o `.env`.
-3. Criar credenciais OAuth Google (console.cloud.google.com/apis/credentials),
+2. Criar credenciais OAuth Google (console.cloud.google.com/apis/credentials),
    com o redirect URI de produção autorizado.
-4. Seguir `webapp/deploy/DEPLOY.md` para pôr o servidor e o domínio no ar.
+3. Seguir `webapp/deploy/DEPLOY.md` para pôr o servidor e o domínio no ar.
