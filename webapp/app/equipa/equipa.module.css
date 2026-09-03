@@ -52,10 +52,23 @@
   color-scheme: light;
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 18px;
   background: radial-gradient(ellipse at 50% 0%, #2a2419 0%, var(--noir) 55%, #0e0c0a 100%);
   padding: 20px;
+}
+
+.loginVoltar {
+  color: #cfc7b7;
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+
+.loginVoltar:hover {
+  color: var(--dourado);
 }
 
 .loginCartao {

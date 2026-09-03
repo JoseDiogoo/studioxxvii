@@ -18,7 +18,6 @@ const NOMES_ESTADO = {
   CONFIRMADO: { label: "Confirmado", classe: "pillAmbar" },
   CONCLUIDO: { label: "Concluído", classe: "pillVerde" },
   CANCELADO: { label: "Cancelado", classe: "pillVermelho" },
-  PENDENTE_PAGAMENTO: { label: "Pendente", classe: "pillNeutro" },
 };
 
 function formatarEuros(valor) {
@@ -92,21 +91,25 @@ export default function HistoricoPage() {
       <div className={styles.filtros2}>
         <input
           type="text"
+          aria-label="Pesquisar cliente"
           placeholder="Pesquisar cliente…"
           value={qDigitado}
           onChange={(e) => setQDigitado(e.target.value)}
         />
         <input
           type="date"
+          aria-label="Data inicial"
           value={filtros.de}
           onChange={(e) => { setFiltros((f) => ({ ...f, de: e.target.value })); setPagina(1); }}
         />
         <input
           type="date"
+          aria-label="Data final"
           value={filtros.ate}
           onChange={(e) => { setFiltros((f) => ({ ...f, ate: e.target.value })); setPagina(1); }}
         />
         <select
+          aria-label="Filtrar por profissional"
           value={filtros.colaboradorId}
           onChange={(e) => { setFiltros((f) => ({ ...f, colaboradorId: e.target.value })); setPagina(1); }}
         >
@@ -116,6 +119,7 @@ export default function HistoricoPage() {
           ))}
         </select>
         <select
+          aria-label="Filtrar por estado de pagamento"
           value={filtros.pago}
           onChange={(e) => { setFiltros((f) => ({ ...f, pago: e.target.value })); setPagina(1); }}
         >

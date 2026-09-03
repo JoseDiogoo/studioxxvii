@@ -28,6 +28,9 @@ export const marcarSchema = z.object({
   servicos: z.array(servicoSelecionadoSchema).min(1),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   horaInicio: z.string().regex(/^\d{2}:\d{2}$/),
+  // Honeypot anti-spam: campo invisível para humanos; um bot que o preenche
+  // faz o pedido ser silenciosamente ignorado (ver app/api/marcar/route.js).
+  empresaSite: z.string().optional(),
 });
 
 export const moverAgendamentoSchema = z.object({

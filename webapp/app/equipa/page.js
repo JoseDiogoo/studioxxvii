@@ -283,6 +283,7 @@ export default function AdminPage() {
           <select
             className={styles.select}
             style={{ width: "auto" }}
+            aria-label="Filtrar por profissional"
             value={filtroColaborador}
             onChange={(e) => setFiltroColaborador(e.target.value)}
           >
@@ -316,6 +317,7 @@ export default function AdminPage() {
             <span className={styles.pesquisaIcone}>⌕</span>
             <input
               type="text"
+              aria-label="Pesquisar cliente ou serviço"
               placeholder="Pesquisar cliente ou serviço…"
               value={pesquisa}
               onChange={(e) => setPesquisa(e.target.value)}
@@ -615,6 +617,7 @@ function DetalheAgendamento({ agendamento, colaboradores, onFechar, onGuardar })
         <div className={styles.detalheLabel}>Profissional</div>
         <select
           className={styles.select}
+          aria-label="Profissional"
           value={agendamento.colaboradorId}
           onChange={(e) => onGuardar({ colaboradorId: e.target.value })}
         >
@@ -624,19 +627,20 @@ function DetalheAgendamento({ agendamento, colaboradores, onFechar, onGuardar })
         </select>
       </div>
 
-      <div className={styles.checkboxLinha}>
+      <label className={styles.checkboxLinha}>
         <input
           type="checkbox"
           checked={agendamento.pago}
           onChange={(e) => onGuardar({ pago: e.target.checked })}
         />
         <span>Pago</span>
-      </div>
+      </label>
 
       <div className={styles.detalheLinha}>
         <div className={styles.detalheLabel}>Método de pagamento</div>
         <select
           className={styles.select}
+          aria-label="Método de pagamento"
           value={agendamento.metodoPagamento || ""}
           onChange={(e) => onGuardar({ metodoPagamento: e.target.value || null })}
         >
@@ -650,6 +654,7 @@ function DetalheAgendamento({ agendamento, colaboradores, onFechar, onGuardar })
         <div className={styles.detalheLabel}>Estado</div>
         <select
           className={styles.select}
+          aria-label="Estado da marcação"
           value={agendamento.status}
           onChange={(e) => onGuardar({ status: e.target.value })}
         >

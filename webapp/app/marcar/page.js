@@ -61,6 +61,7 @@ export default function MarcarPage() {
   const [cliente, setCliente] = useState({ nome: "", telefone: "", email: "", observacoes: "" });
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [resultado, setResultado] = useState(null);
+  const [empresaSite, setEmpresaSite] = useState(""); // honeypot anti-spam — deve ficar sempre vazio
 
   useEffect(() => {
     fetchJSON("/api/servicos")
@@ -132,12 +133,23 @@ export default function MarcarPage() {
 
   async function confirmarMarcacao() {
     setErro("");
+    const nome = cliente.nome.trim();
+    const telefone = cliente.telefone.trim();
+    const email = cliente.email.trim();
     if (!aceitouTermos) {
       setErro("Tens de aceitar os termos para continuar.");
       return;
     }
-    if (!cliente.nome || !cliente.telefone) {
-      setErro("Preenche pelo menos o nome e o telefone.");
+    if (nome.length < 2) {
+      setErro("Indica o teu nome completo.");
+      return;
+    }
+    if (telefone.replace(/\D/g, "").length < 9) {
+      setErro("Indica um número de telefone válido.");
+      return;
+    }
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      setErro("Indica um email válido, ou deixa o campo em branco.");
       return;
     }
     setLoading(true);
@@ -145,10 +157,11 @@ export default function MarcarPage() {
       const data = await fetchJSON("/api/marcar", {
         method: "POST",
         body: JSON.stringify({
-          cliente,
+          cliente: { ...cliente, nome, telefone, email },
           servicos: payloadServicos,
           data: diaSelecionado,
           horaInicio: horaSelecionada,
+          empresaSite,
         }),
       });
       setResultado(data);
@@ -175,9 +188,9 @@ export default function MarcarPage() {
   return (
     <div className={styles.pagina}>
       <div className={styles.hero}>
-        <div className={styles.heroBadge}>
+        <Link href="/" className={styles.heroBadge} aria-label="Voltar à página inicial">
           <LogoBadge size={92} />
-        </div>
+        </Link>
         <div className={styles.heroTitulo}>STUDIO XXVII</div>
         <div className={styles.heroSub}>R. Prof. Eng. Joaquim Vieira Natividade, Alcobaça · Terça a Sábado, 10h–19h</div>
       </div>
@@ -241,6 +254,8 @@ export default function MarcarPage() {
                 setCliente={setCliente}
                 aceitouTermos={aceitouTermos}
                 setAceitouTermos={setAceitouTermos}
+                empresaSite={empresaSite}
+                setEmpresaSite={setEmpresaSite}
               />
             )}
           </div>
@@ -438,6 +453,7 @@ function agruparHoras(horas) {
 function PassoConfirmacao({
   servicosSelecionados, colaboradorPorServico, colaboradoresDisponiveis,
   diaSelecionado, horaSelecionada, total, cliente, setCliente, aceitouTermos, setAceitouTermos,
+  empresaSite, setEmpresaSite,
 }) {
   function nomeColaborador(servicoId) {
     const id = colaboradorPorServico[servicoId];
@@ -464,27 +480,31 @@ function PassoConfirmacao({
 
       <div className={styles.formWrap}>
         <div className={styles.campo}>
-          <label>Nome</label>
-          <input value={cliente.nome} onChange={(e) => setCliente({ ...cliente, nome: e.target.value })} />
+          <label htmlFor="campo-nome">Nome</label>
+          <input id="campo-nome" name="nome" autoComplete="name" value={cliente.nome} onChange={(e) => setCliente({ ...cliente, nome: e.target.value })} />
         </div>
         <div className={styles.campo}>
-          <label>Telefone</label>
-          <input value={cliente.telefone} onChange={(e) => setCliente({ ...cliente, telefone: e.target.value })} placeholder="+351 9xx xxx xxx" />
+          <label htmlFor="campo-telefone">Telefone</label>
+          <input id="campo-telefone" name="telefone" type="tel" autoComplete="tel" value={cliente.telefone} onChange={(e) => setCliente({ ...cliente, telefone: e.target.value })} placeholder="+351 9xx xxx xxx" />
         </div>
         <div className={styles.campo}>
-          <label>Email (opcional)</label>
-          <input type="email" value={cliente.email} onChange={(e) => setCliente({ ...cliente, email: e.target.value })} />
+          <label htmlFor="campo-email">Email (opcional)</label>
+          <input id="campo-email" name="email" type="email" autoComplete="email" value={cliente.email} onChange={(e) => setCliente({ ...cliente, email: e.target.value })} />
         </div>
         <div className={styles.campo}>
-          <label>Observações (opcional)</label>
-          <textarea rows={3} value={cliente.observacoes} onChange={(e) => setCliente({ ...cliente, observacoes: e.target.value })} />
+          <label htmlFor="campo-observacoes">Observações (opcional)</label>
+          <textarea id="campo-observacoes" name="observacoes" rows={3} value={cliente.observacoes} onChange={(e) => setCliente({ ...cliente, observacoes: e.target.value })} />
+        </div>
+        <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+          <label htmlFor="campo-empresa-site">Não preencher</label>
+          <input id="campo-empresa-site" name="empresaSite" tabIndex={-1} autoComplete="off" value={empresaSite} onChange={(e) => setEmpresaSite(e.target.value)} />
         </div>
         <label className={styles.termos}>
           <input type="checkbox" checked={aceitouTermos} onChange={(e) => setAceitouTermos(e.target.checked)} />
           <span>
             Li e aceito os{" "}
-            <Link href="/termos-condicoes" target="_blank">Termos e Condições</Link> e a{" "}
-            <Link href="/politica-privacidade" target="_blank">Política de Privacidade</Link>,
+            <Link href="/termos-condicoes" target="_blank" rel="noopener">Termos e Condições</Link> e a{" "}
+            <Link href="/politica-privacidade" target="_blank" rel="noopener">Política de Privacidade</Link>,
             que autoriza o uso dos meus dados para gerir esta marcação.
           </span>
         </label>
@@ -493,63 +513,12 @@ function PassoConfirmacao({
   );
 }
 
-const ESTADO_MAX_TENTATIVAS = 40; // ~2 minutos a cada 3s
-
 function PassoSucesso({ resultado }) {
-  const [estado, setEstado] = useState(resultado.aguardaPagamento ? "a_aguardar" : "confirmado");
-
-  useEffect(() => {
-    if (estado !== "a_aguardar") return;
-    let tentativas = 0;
-    const intervalo = setInterval(async () => {
-      tentativas += 1;
-      try {
-        const d = await fetchJSON(`/api/marcar/estado?grupoId=${resultado.grupoId}`);
-        if (d.confirmado) {
-          setEstado("confirmado");
-          clearInterval(intervalo);
-        } else if (d.cancelado) {
-          setEstado("expirado");
-          clearInterval(intervalo);
-        } else if (tentativas >= ESTADO_MAX_TENTATIVAS) {
-          setEstado("expirado");
-          clearInterval(intervalo);
-        }
-      } catch {
-        // ignora falhas pontuais de rede, continua a tentar
-      }
-    }, 3000);
-    return () => clearInterval(intervalo);
-  }, [estado, resultado.grupoId]);
-
-  if (estado === "a_aguardar") {
-    return (
-      <div className={styles.sucesso}>
-        <div className={styles.sucessoTitulo}>Confirma o pagamento na app MB Way</div>
-        <p>Recebeste um pedido de pagamento de {formatarEuros(resultado.total)} na app MB Way.</p>
-        <p className={styles.linhaMeta}>Esta página atualiza-se sozinha assim que confirmares. Não feches a app MB Way antes de confirmar.</p>
-      </div>
-    );
-  }
-
-  if (estado === "expirado") {
-    return (
-      <div className={styles.sucesso}>
-        <div className={styles.sucessoTitulo}>O pedido de pagamento expirou</div>
-        <p className={styles.linhaMeta}>Não confirmaste o pagamento a tempo e o horário foi libertado. Podes tentar marcar de novo.</p>
-        <div className={styles.sucessoBotoes}>
-          <Link href="/marcar" className={styles.botao}>Tentar de novo</Link>
-          <Link href="/" className={styles.botaoSecundario}>Voltar ao início</Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.sucesso}>
       <div className={styles.sucessoTitulo}>Marcação confirmada!</div>
       <p>Dia {resultado.data} às {resultado.horaInicio}</p>
-      <p>Total: {formatarEuros(resultado.total)}</p>
+      <p>Total a pagar na barbearia: {formatarEuros(resultado.total)}</p>
       <p className={styles.linhaMeta}>Guarda esta confirmação. Até já!</p>
       <div className={styles.sucessoBotoes}>
         <Link href="/" className={styles.botao}>Voltar ao início</Link>
@@ -562,10 +531,14 @@ function BarraFixa({ passo, irPara, loading, confirmarMarcacao, total, podeConti
   return (
     <div className={styles.barraFixa}>
       <div>
-        {passo > 1 && (
+        {passo > 1 ? (
           <button type="button" className={styles.botaoSecundario} onClick={() => irPara(passo - 1)}>
             Voltar
           </button>
+        ) : (
+          <Link href="/" className={styles.botaoSecundario}>
+            Voltar
+          </Link>
         )}
       </div>
       <div className={styles.total}>

@@ -1,7 +1,8 @@
 import AdminProviders from "./providers";
 
 export const metadata = {
-  title: "Studio XXVII — Admin",
+  title: "Área da Equipa",
+  robots: { index: false, follow: false },
 };
 
 export default function AdminLayout({ children }) {

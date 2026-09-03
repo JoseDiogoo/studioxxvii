@@ -25,6 +25,7 @@ export default function SiteFooter() {
             <li><Link href="/#servicos">Serviços</Link></li>
             <li><Link href="/#galeria">Galeria</Link></li>
             <li><Link href="/marcar">Marcar horário</Link></li>
+            <li><Link href="/faq">Perguntas Frequentes</Link></li>
           </ul>
         </div>
         <div className={styles.footerColuna}>

@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import styles from "../equipa.module.css";
 import LogoBadge from "../../LogoBadge";
 
@@ -33,6 +34,7 @@ function LoginForm() {
 
   return (
     <div className={styles.loginPagina}>
+      <Link href="/" className={styles.loginVoltar}>← Voltar ao site</Link>
       <form className={styles.loginCartao} onSubmit={onSubmit}>
         <div className={styles.loginBadge}>
           <LogoBadge size={64} />
@@ -40,12 +42,12 @@ function LoginForm() {
         <div className={styles.loginTitulo}>Studio XXVII — Admin</div>
         {erro && <div className={styles.erro}>{erro}</div>}
         <div className={styles.campo}>
-          <label>Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label htmlFor="login-email">Email</label>
+          <input id="login-email" name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className={styles.campo}>
-          <label>Password</label>
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label htmlFor="login-password">Password</label>
+          <input id="login-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <button type="submit" className={styles.botao} disabled={loading}>
           {loading ? "A entrar…" : "Entrar"}
