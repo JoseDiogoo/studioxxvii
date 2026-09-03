@@ -1,0 +1,134 @@
+// Schema da app do Studio XXVII — marcação pública + admin dos colaboradores.
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Salao {
+  id        String   @id @default(cuid())
+  nome      String
+  morada    String
+  telefone  String?
+  horarios  Horario[]
+  servicos  Servico[]
+  colaboradores Colaborador[]
+  clientes  Cliente[]
+  createdAt DateTime @default(now())
+}
+
+model Servico {
+  id               String   @id @default(cuid())
+  salaoId          String
+  salao            Salao    @relation(fields: [salaoId], references: [id], onDelete: Cascade)
+  titulo           String
+  descricao        String?
+  preco            Float
+  duracaoMinutos   Int
+  ativo            Boolean  @default(true)
+  colaboradores    ColaboradorServico[]
+  agendamentos     Agendamento[]
+  createdAt        DateTime @default(now())
+}
+
+model Colaborador {
+  id           String   @id @default(cuid())
+  salaoId      String
+  salao        Salao    @relation(fields: [salaoId], references: [id], onDelete: Cascade)
+  nome         String
+  email        String   @unique
+  passwordHash String
+  ativo        Boolean  @default(true)
+  servicos     ColaboradorServico[]
+  horarios     Horario[]
+  agendamentos Agendamento[]
+  createdAt    DateTime @default(now())
+
+  // Sincronização com o Google Calendar do colaborador (push one-way: app -> Google).
+  googleRefreshToken String?
+  // Feed iCalendar (.ics) só de leitura, para subscrever no telemóvel sem OAuth.
+  icsToken           String?  @unique
+}
+
+model ColaboradorServico {
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  servicoId     String
+  servico       Servico     @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+
+  @@id([colaboradorId, servicoId])
+}
+
+// diaSemana: 0=Domingo ... 6=Sábado
+model Horario {
+  id            String   @id @default(cuid())
+  salaoId       String
+  salao         Salao    @relation(fields: [salaoId], references: [id], onDelete: Cascade)
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  diaSemana     Int
+  inicio        String
+  fim           String
+}
+
+model Cliente {
+  id           String   @id @default(cuid())
+  salaoId      String
+  salao        Salao    @relation(fields: [salaoId], references: [id], onDelete: Cascade)
+  nome         String
+  telefone     String
+  email        String?
+  observacoes  String?
+  agendamentos Agendamento[]
+  createdAt    DateTime @default(now())
+
+  @@unique([salaoId, telefone])
+}
+
+enum MetodoPagamento {
+  DINHEIRO
+  MULTIBANCO
+  MBWAY
+  CARTAO
+  OUTRO
+}
+
+enum StatusAgendamento {
+  PENDENTE_PAGAMENTO
+  CONFIRMADO
+  CANCELADO
+  CONCLUIDO
+}
+
+model Agendamento {
+  id              String   @id @default(cuid())
+  grupoId         String
+  clienteId       String
+  cliente         Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  colaboradorId   String
+  colaborador     Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  servicoId       String
+  servico         Servico  @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+  data            DateTime
+  horaInicio      String
+  horaFim         String
+  valor           Float
+  pago            Boolean  @default(false)
+  metodoPagamento MetodoPagamento?
+  observacoes     String?
+  status          StatusAgendamento @default(CONFIRMADO)
+  // Id do pedido de pagamento MB Way (ifthenpay) associado a este agendamento.
+  referenciaPagamento String?
+  // Id do evento correspondente no Google Calendar do colaborador (sincronização one-way).
+  googleEventId       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([colaboradorId, data])
+  @@index([grupoId])
+}

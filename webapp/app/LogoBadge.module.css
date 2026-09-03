@@ -1,0 +1,31 @@
+.badge {
+  border-radius: 50%;
+  background: #f5efe6;
+  border: 3px solid #141210;
+  box-shadow: 0 0 0 1px #141210 inset, 0 0 0 5px #f5efe6 inset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, "Times New Roman", serif;
+  flex-shrink: 0;
+}
+
+.studio {
+  font-size: 0.72em;
+  letter-spacing: 0.18em;
+  color: #141210;
+}
+
+.rule {
+  width: 55%;
+  height: 1px;
+  background: #141210;
+  margin: 0.28em 0;
+}
+
+.ano {
+  font-size: 0.9em;
+  letter-spacing: 0.12em;
+  color: #141210;
+}

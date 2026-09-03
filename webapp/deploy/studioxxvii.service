@@ -1,0 +1,31 @@
+# Unit systemd para correr "next start" como serviço persistente.
+#
+# Instalar:
+#   sudo cp deploy/studioxxvii.service /etc/systemd/system/studioxxvii.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now studioxxvii
+#
+# Ver logs: sudo journalctl -u studioxxvii -f
+
+[Unit]
+Description=Studio XXVII - Next.js
+After=network.target
+
+[Service]
+Type=simple
+User=studioxxvii
+WorkingDirectory=/srv/studioxxvii/webapp
+EnvironmentFile=/srv/studioxxvii/webapp/.env
+ExecStart=/usr/bin/node /srv/studioxxvii/webapp/node_modules/.bin/next start -p 3000
+# Confirma o caminho do node com `which node` na VPS e ajusta se for diferente.
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Isolamento básico do processo.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
