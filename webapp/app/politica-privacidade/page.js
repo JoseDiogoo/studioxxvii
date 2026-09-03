@@ -3,8 +3,10 @@ import SiteFooter from "../SiteFooter";
 import styles from "../legal/legal.module.css";
 
 export const metadata = {
-  title: "Política de Privacidade — Studio XXVII",
+  title: "Política de Privacidade",
   description: "Política de privacidade e proteção de dados pessoais do Studio XXVII.",
+  alternates: { canonical: "/politica-privacidade" },
+  robots: { index: true, follow: true },
 };
 
 export default function PoliticaPrivacidadePage() {
@@ -53,7 +55,7 @@ export default function PoliticaPrivacidadePage() {
           <p>Recolhemos apenas os dados necessários para gerir a tua marcação:</p>
           <ul>
             <li><strong>Nome</strong> — para identificar a marcação e tratar-te pelo nome.</li>
-            <li><strong>Telefone</strong> — para confirmar a marcação, avisar de alterações de horário e, quando aplicável, tratar o pedido de pagamento por MB Way.</li>
+            <li><strong>Telefone</strong> — para confirmar a marcação e avisar de alterações de horário, incluindo por WhatsApp.</li>
             <li><strong>Email</strong> (opcional) — se o indicares, para enviar confirmações ou informação relacionada com a tua marcação.</li>
             <li><strong>Observações</strong> (opcional) — qualquer nota que decidas partilhar sobre o serviço pretendido.</li>
           </ul>
@@ -67,7 +69,6 @@ export default function PoliticaPrivacidadePage() {
           <ul>
             <li>Criar, confirmar, reagendar ou cancelar a tua marcação;</li>
             <li>Enviar mensagens de confirmação ou aviso de alteração de horário (por WhatsApp ou email, quando aplicável);</li>
-            <li>Processar pagamentos antecipados por MB Way, quando essa opção estiver ativa;</li>
             <li>Manter um histórico de marcações para efeitos de gestão interna do negócio (ex.: estatísticas de serviços, faturação);</li>
             <li>Cumprir obrigações legais, nomeadamente fiscais e contabilísticas.</li>
           </ul>
@@ -91,7 +92,6 @@ export default function PoliticaPrivacidadePage() {
           </p>
           <ul>
             <li><strong>Twilio</strong> — envio de mensagens WhatsApp de confirmação, alteração ou cancelamento de marcações (partilhamos o teu número de telefone e o conteúdo da mensagem).</li>
-            <li><strong>ifthenpay</strong> — processamento de pedidos de pagamento MB Way, quando essa opção está ativa (partilhamos o teu número de telefone e o valor a pagar).</li>
             <li><strong>Google Calendar</strong> — cada colaborador pode ligar a sua conta Google para sincronizar a sua agenda; nesse caso, o nome do cliente e o serviço marcado ficam também visíveis no calendário Google desse colaborador.</li>
             <li>Fornecedores de alojamento e infraestrutura técnica do site.</li>
           </ul>

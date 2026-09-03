@@ -36,11 +36,6 @@ async function carregarContexto(colaboradorIds, dia, diaSemana) {
         colaboradorId: { in: colaboradorIds },
         data: { gte: inicioDia, lte: fimDia },
         status: { not: "CANCELADO" },
-        // Um pedido MB Way por confirmar há mais de 10 min expirou — liberta o horário.
-        OR: [
-          { status: { not: "PENDENTE_PAGAMENTO" } },
-          { createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) } },
-        ],
       },
     }),
   ]);

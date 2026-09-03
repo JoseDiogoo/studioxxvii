@@ -3,8 +3,10 @@ import SiteFooter from "../SiteFooter";
 import styles from "../legal/legal.module.css";
 
 export const metadata = {
-  title: "Termos e Condições — Studio XXVII",
+  title: "Termos e Condições",
   description: "Termos e condições gerais de marcação e prestação de serviços do Studio XXVII.",
+  alternates: { canonical: "/termos-condicoes" },
+  robots: { index: true, follow: true },
 };
 
 export default function TermosCondicoesPage() {
@@ -55,7 +57,7 @@ export default function TermosCondicoesPage() {
             <li>Escolhes o profissional (ou &ldquo;sem preferência&rdquo;);</li>
             <li>Escolhes o dia e a hora, de entre os horários disponíveis;</li>
             <li>Confirmas os teus dados de contacto e aceitas os termos;</li>
-            <li>Recebes a confirmação da marcação (e, se aplicável, o pedido de pagamento antecipado).</li>
+            <li>Recebes a confirmação imediata da marcação.</li>
           </ol>
           <p>
             A marcação fica associada ao número de telefone indicado. É esse número que
@@ -74,15 +76,10 @@ export default function TermosCondicoesPage() {
 
           <h2 id="pagamento">4. Pagamento</h2>
           <p>
-            Salvo indicação em contrário no momento da marcação, o pagamento é efetuado
-            presencialmente, no balcão, após o serviço. Quando o pagamento antecipado por MB
-            Way estiver disponível:
+            O pagamento é sempre efetuado <strong>presencialmente, no balcão, depois de
+            realizado o serviço</strong>. Não é pedido nem cobrado qualquer valor no momento da
+            marcação online — esta serve apenas para reservar o teu horário.
           </p>
-          <ul>
-            <li>O horário fica reservado durante um período limitado (tipicamente 10 minutos) enquanto aguardamos a confirmação do pagamento;</li>
-            <li>Se o pagamento não for confirmado dentro desse período, a reserva é automaticamente libertada e o horário volta a ficar disponível;</li>
-            <li>Em caso de reagendamento por iniciativa do Studio XXVII de uma marcação já paga, e caso não seja possível encontrar um novo horário adequado, o valor pago fica disponível como <strong>crédito para uma próxima marcação</strong>; casos excecionais de devolução são tratados diretamente connosco.</li>
-          </ul>
 
           <h2 id="cancelamento">5. Cancelamentos, reagendamento e faltas</h2>
           <p>
@@ -96,8 +93,8 @@ export default function TermosCondicoesPage() {
             WhatsApp, com o novo horário proposto.
           </p>
           <p>
-            Faltas repetidas e não avisadas a marcações confirmadas podem levar-nos a exigir
-            pagamento antecipado em marcações futuras do mesmo cliente.
+            Faltas repetidas e não avisadas a marcações confirmadas podem levar-nos a pedir
+            confirmação por telefone antes de aceitar marcações futuras do mesmo cliente.
           </p>
 
           <h2 id="menores">6. Menores de idade</h2>

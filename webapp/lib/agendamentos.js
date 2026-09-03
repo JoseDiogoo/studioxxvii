@@ -10,17 +10,12 @@ const INCLUDE_PADRAO = {
 };
 
 /**
- * Confirma todos os agendamentos de um grupo (mesma marcação/carrinho): marca como
- * CONFIRMADO + pago, sincroniza com o Google Calendar do respetivo colaborador e
- * avisa o cliente por WhatsApp. Usado tanto quando não há pagamento antecipado
- * configurado, como no callback de confirmação do MB Way.
+ * Sincroniza com o Google Calendar do respetivo colaborador e avisa o cliente
+ * por WhatsApp, para todos os agendamentos recém-criados de um grupo (mesma
+ * marcação/carrinho). O pagamento só é registado mais tarde pela equipa, depois
+ * do corte, em /equipa.
  */
-export async function confirmarAgendamentosDoGrupo(grupoId, { metodoPagamento = null, pago = false } = {}) {
-  await prisma.agendamento.updateMany({
-    where: { grupoId, status: "PENDENTE_PAGAMENTO" },
-    data: { status: "CONFIRMADO", pago, ...(metodoPagamento ? { metodoPagamento } : {}) },
-  });
-
+export async function confirmarAgendamentosDoGrupo(grupoId) {
   const agendamentos = await prisma.agendamento.findMany({
     where: { grupoId },
     include: INCLUDE_PADRAO,
@@ -46,12 +41,4 @@ export async function confirmarAgendamentosDoGrupo(grupoId, { metodoPagamento = 
   }
 
   return agendamentos;
-}
-
-/** Liberta o horário quando o pagamento falha, expira ou é recusado. */
-export async function cancelarAgendamentosDoGrupo(grupoId) {
-  await prisma.agendamento.updateMany({
-    where: { grupoId, status: "PENDENTE_PAGAMENTO" },
-    data: { status: "CANCELADO" },
-  });
 }

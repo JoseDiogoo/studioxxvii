@@ -91,20 +91,17 @@ export async function PATCH(req, { params }) {
 
   if (foiCancelado) {
     removerEventoGoogleCalendar(atualizado).catch(() => {});
-    if (atual.status !== "PENDENTE_PAGAMENTO") {
-      enviarWhatsApp({
-        telefone: atualizado.cliente.telefone,
-        mensagem: mensagemCancelamento({
-          nomeCliente: atualizado.cliente.nome,
-          servicoTitulo: atualizado.servico.titulo,
-          dataStr: formatDateOnly(new Date(atualizado.data)),
-          horaInicio: atualizado.horaInicio,
-        }),
-      }).catch(() => {});
-    }
+    enviarWhatsApp({
+      telefone: atualizado.cliente.telefone,
+      mensagem: mensagemCancelamento({
+        nomeCliente: atualizado.cliente.nome,
+        servicoTitulo: atualizado.servico.titulo,
+        dataStr: formatDateOnly(new Date(atualizado.data)),
+        horaInicio: atualizado.horaInicio,
+      }),
+    }).catch(() => {});
   } else if (mudouHorarioOuColaborador && atual.status === "CONFIRMADO") {
-    // Avisa o cliente sempre que a equipa reagenda uma marcação já confirmada
-    // (inclui as pagas antecipadamente por MB Way).
+    // Avisa o cliente sempre que a equipa reagenda uma marcação já confirmada.
     enviarWhatsApp({
       telefone: atualizado.cliente.telefone,
       mensagem: mensagemReagendamento({

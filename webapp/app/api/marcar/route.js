@@ -5,15 +5,37 @@ import { getSalaoId } from "@/lib/salao";
 import { marcarSchema } from "@/lib/schemas";
 import { prepararServicos, encaixarHorario } from "@/lib/disponibilidade";
 import { parseDateOnly } from "@/lib/date";
-import { pagamentoAntecipadoAtivo, iniciarPagamentoMBWay } from "@/lib/pagamentos";
-import { confirmarAgendamentosDoGrupo, cancelarAgendamentosDoGrupo } from "@/lib/agendamentos";
+import { confirmarAgendamentosDoGrupo } from "@/lib/agendamentos";
+import { isBookingRateLimited, registerBookingAttempt } from "@/lib/rate-limit";
+
+function ipDoPedido(req) {
+  const encaminhado = req.headers.get("x-forwarded-for");
+  if (encaminhado) return encaminhado.split(",")[0].trim();
+  return req.headers.get("x-real-ip") || "desconhecido";
+}
 
 export async function POST(req) {
+  const ip = ipDoPedido(req);
+  if (isBookingRateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Demasiados pedidos. Tenta novamente daqui a uns minutos." },
+      { status: 429 }
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = marcarSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Dados do formulário inválidos." }, { status: 400 });
   }
+
+  // Honeypot: campo invisível que só um bot preenche. Responde como se tivesse
+  // corrido bem, sem criar nada, para não revelar ao bot que foi apanhado.
+  if (parsed.data.empresaSite) {
+    return NextResponse.json({ grupoId: crypto.randomUUID(), data: parsed.data.data, horaInicio: parsed.data.horaInicio, total: 0 });
+  }
+
+  registerBookingAttempt(ip);
 
   const { cliente, servicos, data, horaInicio } = parsed.data;
 
@@ -36,7 +58,6 @@ export async function POST(req) {
   const salaoId = await getSalaoId();
   const precoPorServico = new Map(servicosPreparados.map((s) => [s.servicoId, s.preco]));
   const grupoId = crypto.randomUUID();
-  const exigePagamento = pagamentoAntecipadoAtivo();
 
   const resultado = await prisma.$transaction(async (tx) => {
     const clienteDb = await tx.cliente.upsert({
@@ -67,7 +88,6 @@ export async function POST(req) {
           horaInicio: item.horaInicio,
           horaFim: item.horaFim,
           valor: precoPorServico.get(item.servicoId) ?? 0,
-          status: exigePagamento ? "PENDENTE_PAGAMENTO" : "CONFIRMADO",
         },
       });
       agendamentos.push(agendamento);
@@ -78,23 +98,6 @@ export async function POST(req) {
 
   const total = resultado.agendamentos.reduce((acc, a) => acc + a.valor, 0);
 
-  if (!exigePagamento) {
-    await confirmarAgendamentosDoGrupo(grupoId, { pago: false });
-    return NextResponse.json({ grupoId, data, horaInicio, total, aguardaPagamento: false });
-  }
-
-  let pagamento;
-  try {
-    pagamento = await iniciarPagamentoMBWay({ telefone: cliente.telefone, valor: total, orderId: grupoId });
-  } catch (err) {
-    await cancelarAgendamentosDoGrupo(grupoId);
-    return NextResponse.json({ error: err.message }, { status: 502 });
-  }
-
-  await prisma.agendamento.updateMany({
-    where: { grupoId },
-    data: { metodoPagamento: "MBWAY", referenciaPagamento: pagamento.requestId },
-  });
-
-  return NextResponse.json({ grupoId, data, horaInicio, total, aguardaPagamento: true });
+  await confirmarAgendamentosDoGrupo(grupoId);
+  return NextResponse.json({ grupoId, data, horaInicio, total });
 }

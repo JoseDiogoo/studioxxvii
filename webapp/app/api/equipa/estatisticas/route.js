@@ -40,14 +40,12 @@ export async function GET(req) {
   });
 
   const validos = agendamentos.filter((a) => ESTADOS_VALIDOS.includes(a.status));
-  const pendentes = agendamentos.filter((a) => a.status === "PENDENTE_PAGAMENTO");
   const porPagar = validos.filter((a) => !a.pago);
 
   const receitaTotal = validos.reduce((acc, a) => acc + a.valor, 0);
   const totalMarcacoes = validos.length;
   const ticketMedio = totalMarcacoes ? receitaTotal / totalMarcacoes : 0;
-  const receitaPendente = porPagar.reduce((acc, a) => acc + a.valor, 0) +
-    pendentes.reduce((acc, a) => acc + a.valor, 0);
+  const receitaPendente = porPagar.reduce((acc, a) => acc + a.valor, 0);
 
   const porDiaMap = new Map();
   for (const a of validos) {
@@ -99,7 +97,7 @@ export async function GET(req) {
       totalMarcacoes,
       ticketMedio: Math.round(ticketMedio * 100) / 100,
       receitaPendente: Math.round(receitaPendente * 100) / 100,
-      marcacoesPendentes: pendentes.length + porPagar.length,
+      marcacoesPendentes: porPagar.length,
     },
     receitaPorDia,
     porServico,
