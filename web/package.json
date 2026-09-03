@@ -53,5 +53,8 @@
   "devDependencies": {
     "css-loader": "^5.2.0",
     "style-loader": "^2.0.0"
+  },
+  "resolutions": {
+    "**/postcss-safe-parser/postcss": "^7.0.35"
   }
 }
