@@ -15,6 +15,7 @@ Bem-vindo à documentação centralizada da plataforma **Studio XXVII / Barber F
 - **[`design/`](./design/)**:
   - [`DESIGN.md`](./design/DESIGN.md) - Guia de estilo, paleta de cores (preto, creme, dourado), tipografia e design system.
   - `DESIGN.fig` - Ficheiro Figma de assets e ecrãs.
+  - [`skills/studio-xxvii/SKILL.md`](../skills/studio-xxvii/SKILL.md) - Design Skill oficial TypeUI para agentes de IA e programadores.
 - **[`api/`](./api/)**:
   - `Insomnia.json` - Coleção de endpoints para teste no Insomnia / Postman.
 - **[`deployment/`](./deployment/)**:
