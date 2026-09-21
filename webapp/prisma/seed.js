@@ -4,9 +4,7 @@ const crypto = require("crypto");
 
 const prisma = new PrismaClient();
 
-function randomPassword() {
-  return crypto.randomBytes(9).toString("base64url");
-}
+const DEFAULT_PASSWORD = "Studio2026!";
 
 const SERVICOS = [
   { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 20 },
@@ -16,16 +14,21 @@ const SERVICOS = [
   { titulo: "Corte + Barba", preco: 22, duracaoMinutos: 45 },
   { titulo: "Rapar + Barba", preco: 18, duracaoMinutos: 40 },
   { titulo: "Corte + Barba + Lavagem", preco: 24, duracaoMinutos: 55 },
-  // preço não indicado no plano original — placeholder, confirmar com o dono
   { titulo: "Corte + Sobrancelha", preco: 16, duracaoMinutos: 30 },
 ];
 
 const DIAS_TERCA_A_SABADO = [2, 3, 4, 5, 6];
 
 async function main() {
+  console.log("A inicializar seed idempotent no PostgreSQL...");
+
+  // 1. Upsert Salão
   const salao = await prisma.salao.upsert({
     where: { id: "studio-xxvii" },
-    update: {},
+    update: {
+      nome: "Studio XXVII",
+      morada: "R. Prof. Eng. Joaquim Vieira Natividade, Alcobaça",
+    },
     create: {
       id: "studio-xxvii",
       nome: "Studio XXVII",
@@ -33,56 +36,95 @@ async function main() {
     },
   });
 
+  // 2. Upsert Serviços
   const servicos = [];
   for (const s of SERVICOS) {
-    const servico = await prisma.servico.create({
-      data: { ...s, salaoId: salao.id },
+    let servico = await prisma.servico.findFirst({
+      where: { salaoId: salao.id, titulo: s.titulo },
     });
+
+    if (servico) {
+      servico = await prisma.servico.update({
+        where: { id: servico.id },
+        data: { preco: s.preco, duracaoMinutos: s.duracaoMinutos, ativo: true },
+      });
+    } else {
+      servico = await prisma.servico.create({
+        data: { ...s, salaoId: salao.id },
+      });
+    }
     servicos.push(servico);
   }
 
+  // 3. Upsert Colaboradores
   const colaboradoresPlaceholder = [
     { nome: "Barbeiro 1", email: "barbeiro1@studioxxvii.pt" },
     { nome: "Barbeiro 2", email: "barbeiro2@studioxxvii.pt" },
   ];
 
-  const credenciais = [];
+  const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
 
   for (const c of colaboradoresPlaceholder) {
-    const password = randomPassword();
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    const colaborador = await prisma.colaborador.create({
-      data: {
+    const colaborador = await prisma.colaborador.upsert({
+      where: { email: c.email },
+      update: {
+        nome: c.nome,
+        passwordHash,
+        salaoId: salao.id,
+        ativo: true,
+      },
+      create: {
         nome: c.nome,
         email: c.email,
         passwordHash,
         salaoId: salao.id,
         icsToken: crypto.randomBytes(24).toString("base64url"),
-        servicos: {
-          create: servicos.map((s) => ({ servicoId: s.id })),
-        },
-        horarios: {
-          create: DIAS_TERCA_A_SABADO.map((diaSemana) => ({
-            salaoId: salao.id,
-            diaSemana,
-            inicio: "10:00",
-            fim: "19:00",
-          })),
-        },
       },
     });
 
-    credenciais.push({ nome: colaborador.nome, email: colaborador.email, password });
+    // Associar todos os serviços ao colaborador
+    for (const s of servicos) {
+      await prisma.colaboradorServico.upsert({
+        where: {
+          colaboradorId_servicoId: {
+            colaboradorId: colaborador.id,
+            servicoId: s.id,
+          },
+        },
+        update: {},
+        create: {
+          colaboradorId: colaborador.id,
+          servicoId: s.id,
+        },
+      });
+    }
+
+    // Associar horários Terça a Sábado
+    await prisma.horario.deleteMany({
+      where: { colaboradorId: colaborador.id },
+    });
+
+    for (const diaSemana of DIAS_TERCA_A_SABADO) {
+      await prisma.horario.create({
+        data: {
+          salaoId: salao.id,
+          colaboradorId: colaborador.id,
+          diaSemana,
+          inicio: "10:00",
+          fim: "19:00",
+        },
+      });
+    }
   }
 
-  console.log("\nSeed concluído.");
-  console.log("Salao id:", salao.id);
-  console.log("\nCredenciais de login geradas (guarda-as agora, não voltam a aparecer):");
-  for (const cred of credenciais) {
-    console.log(`  ${cred.nome} — ${cred.email} — password: ${cred.password}`);
+  console.log("\n✅ Seed concluído com sucesso no PostgreSQL!");
+  console.log("Salão:", salao.nome);
+  console.log("Serviços registados:", servicos.length);
+  console.log("\n🔑 Credenciais de login configuradas:");
+  for (const c of colaboradoresPlaceholder) {
+    console.log(`  - Email: ${c.email} | Password: ${DEFAULT_PASSWORD}`);
   }
-  console.log("\nMuda estas passwords assim que possível (não há UI para isso ainda).\n");
+  console.log("\nPodes entrar diretamente em http://localhost:3000/equipa/login com estas contas.\n");
 }
 
 main()
