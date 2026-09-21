@@ -13,7 +13,7 @@ export class ServicoController {
   async listarAtivos() {
     try {
       const servicos = await this.listarServicosUseCase.execute();
-      return HttpResponse.ok(servicos);
+      return HttpResponse.ok({ servicos });
     } catch (err) {
       return HttpResponse.tratarErro(err);
     }

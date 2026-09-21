@@ -2,6 +2,6 @@ import { ColaboradorController } from "@/presentation/controllers/ColaboradorCon
 
 const controller = new ColaboradorController();
 
-export async function GET() {
-  return await controller.listarAtivos();
+export async function GET(req) {
+  return await controller.listarAtivos(req);
 }

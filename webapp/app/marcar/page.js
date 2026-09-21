@@ -65,12 +65,12 @@ export default function MarcarPage() {
 
   useEffect(() => {
     fetchJSON("/api/servicos")
-      .then((d) => setServicos(d.servicos))
+      .then((d) => setServicos(d?.servicos || (Array.isArray(d) ? d : [])))
       .catch((e) => setErro(e.message));
   }, []);
 
   const servicosSelecionados = useMemo(
-    () => servicos.filter((s) => selecionadosIds.includes(s.id)),
+    () => (Array.isArray(servicos) ? servicos.filter((s) => selecionadosIds.includes(s.id)) : []),
     [servicos, selecionadosIds]
   );
 

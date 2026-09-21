@@ -30,10 +30,19 @@ export class ColaboradorController {
     });
   }
 
-  async listarAtivos() {
+  async listarAtivos(req) {
     try {
+      const url = req?.url ? new URL(req.url) : null;
+      const servicoId = url?.searchParams?.get("servicoId");
+
+      if (servicoId) {
+        const rels = await this.colaboradorRepo.findElegiveisPorServico(servicoId);
+        const colaboradores = rels.map((r) => r.colaborador || { id: r.colaboradorId });
+        return HttpResponse.ok({ colaboradores });
+      }
+
       const colaboradores = await this.colaboradorRepo.findAtivos();
-      return HttpResponse.ok(colaboradores);
+      return HttpResponse.ok({ colaboradores });
     } catch (err) {
       return HttpResponse.tratarErro(err);
     }

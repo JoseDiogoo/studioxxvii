@@ -33,8 +33,19 @@ export class DisponibilidadeController {
       const body = await req.json().catch(() => null);
       if (!body) return HttpResponse.badRequest("JSON inválido.");
 
-      const { servicos, ano, mes } = body;
-      if (!ano || !mes) return HttpResponse.badRequest("ano e mes são obrigatórios.");
+      let { servicos, ano, mes, de } = body;
+
+      if (!ano && de) {
+        const parts = de.split("-").map(Number);
+        ano = parts[0];
+        mes = parts[1];
+      }
+
+      if (!ano || !mes) {
+        const hoje = new Date();
+        ano = hoje.getFullYear();
+        mes = hoje.getMonth() + 1;
+      }
 
       const resultado = await this.obterDiasUseCase.execute({
         servicos,
