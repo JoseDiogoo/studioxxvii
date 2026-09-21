@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*", "./src/*"],
       "@/domain/*": ["./src/domain/*"],
@@ -9,5 +8,6 @@
       "@/presentation/*": ["./src/presentation/*"],
       "@/src/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", ".next"]
 }
