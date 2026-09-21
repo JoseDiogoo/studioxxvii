@@ -1,12 +1,7 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { SalaoController } from "@/presentation/controllers/SalaoController";
+
+const controller = new SalaoController();
 
 export async function GET() {
-  const salao = await prisma.salao.findFirst({
-    select: { id: true, nome: true, morada: true, telefone: true },
-  });
-  if (!salao) {
-    return NextResponse.json({ error: "Salão não configurado." }, { status: 404 });
-  }
-  return NextResponse.json(salao);
+  return await controller.obterInfo();
 }

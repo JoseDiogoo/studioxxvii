@@ -1,34 +1,40 @@
 .badge {
   border-radius: 50%;
-  background: #f5efe6;
-  border: 1.5px solid #141210;
+  background: var(--creme, #f5efe6);
+  border: 1.5px solid var(--noir, #141210);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 12%;
   font-family: var(--font-display, Georgia, "Times New Roman", serif);
   flex-shrink: 0;
 }
 
 .studio {
-  font-size: 0.82em;
   font-weight: 800;
   letter-spacing: 0.045em;
-  color: #141210;
+  color: var(--noir, #141210);
   line-height: 1;
 }
 
 .rule {
   width: 46%;
   height: 1px;
-  background: #141210;
-  margin: 0.22em 0;
+  background: var(--noir, #141210);
+  margin: 4px 0;
 }
 
 .ano {
-  font-size: 1em;
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: #141210;
+  color: var(--noir, #141210);
+  line-height: 1;
+}
+
+.anoCompacto {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--noir, #141210);
   line-height: 1;
 }

@@ -62,7 +62,22 @@
 }
 
 @media (max-width: 500px) {
+  .header {
+    padding: 14px 16px;
+  }
+
+  .headerDireita {
+    gap: 8px;
+  }
+
   .headerDireita .botaoOuro {
+    padding: 8px 14px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .marcaTexto {
     display: none;
   }
 }
@@ -338,8 +353,8 @@
 .faixaLabel {
   display: block;
   color: var(--dourado);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  font-size: 0.73rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   margin-bottom: 6px;
   font-weight: 700;
@@ -483,12 +498,28 @@
   color: #beb6a5;
 }
 
+.servicosGrupos {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.servicoGrupoLabel {
+  display: block;
+  color: var(--dourado);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
 .listaServicos {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 56px;
-  max-width: 900px;
-  margin: 0 auto;
 }
 
 .servicoLinha {
@@ -639,7 +670,7 @@
 }
 
 .horarioFechado {
-  color: #b08a52 !important;
+  color: var(--dourado-escuro) !important;
 }
 
 .contactosLista {

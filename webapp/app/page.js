@@ -7,15 +7,17 @@ import ToolsWheel from "./ToolsWheel";
 import styles from "./home.module.css";
 
 const SERVICOS = [
-  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 20 },
-  { titulo: "Corte Criança", preco: 13, duracaoMinutos: 30 },
-  { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 30 },
-  { titulo: "Corte + Lavagem", preco: 17, duracaoMinutos: 40 },
-  { titulo: "Corte + Barba", preco: 22, duracaoMinutos: 45 },
-  { titulo: "Rapar + Barba", preco: 18, duracaoMinutos: 40 },
-  { titulo: "Corte + Barba + Lavagem", preco: 24, duracaoMinutos: 55 },
-  { titulo: "Corte + Sobrancelha", preco: 16, duracaoMinutos: 30 },
+  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 20, categoria: "Cabelo" },
+  { titulo: "Corte Criança", preco: 13, duracaoMinutos: 30, categoria: "Cabelo" },
+  { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 30, categoria: "Cabelo" },
+  { titulo: "Corte + Lavagem", preco: 17, duracaoMinutos: 40, categoria: "Combos" },
+  { titulo: "Corte + Barba", preco: 22, duracaoMinutos: 45, categoria: "Combos" },
+  { titulo: "Rapar + Barba", preco: 18, duracaoMinutos: 40, categoria: "Combos" },
+  { titulo: "Corte + Barba + Lavagem", preco: 24, duracaoMinutos: 55, categoria: "Combos" },
+  { titulo: "Corte + Sobrancelha", preco: 16, duracaoMinutos: 30, categoria: "Combos" },
 ];
+
+const CATEGORIAS_SERVICOS = ["Cabelo", "Combos"];
 
 function formatarEuros(valor) {
   return valor.toLocaleString("pt-PT", { style: "currency", currency: "EUR" });
@@ -136,9 +138,9 @@ function Sobre() {
             pressas, sem fórmulas — só o resultado que procuras.
           </p>
           <p className={styles.sobreAssinatura}>&ldquo;Criando identidades.&rdquo;</p>
-          <Link href="/marcar" className={styles.botaoContorno} style={{ borderColor: "#d8cfae", color: "#201c17" }}>
+          <a href="#galeria" className={styles.botaoContorno} style={{ borderColor: "#d8cfae", color: "#201c17" }}>
             Conhecer o espaço
-          </Link>
+          </a>
         </div>
       </div>
     </section>
@@ -156,14 +158,21 @@ function Servicos() {
           na tua marcação.
         </p>
       </div>
-      <div className={styles.listaServicos}>
-        {SERVICOS.map((s) => (
-          <div key={s.titulo} className={styles.servicoLinha}>
-            <div className={styles.servicoInfo}>
-              <span className={styles.servicoNome}>{s.titulo}</span>
-              <span className={styles.servicoDuracao}>{s.duracaoMinutos} min</span>
+      <div className={styles.servicosGrupos}>
+        {CATEGORIAS_SERVICOS.map((categoria) => (
+          <div key={categoria} className={styles.servicoGrupo}>
+            <span className={styles.servicoGrupoLabel}>{categoria}</span>
+            <div className={styles.listaServicos}>
+              {SERVICOS.filter((s) => s.categoria === categoria).map((s) => (
+                <div key={s.titulo} className={styles.servicoLinha}>
+                  <div className={styles.servicoInfo}>
+                    <span className={styles.servicoNome}>{s.titulo}</span>
+                    <span className={styles.servicoDuracao}>{s.duracaoMinutos} min</span>
+                  </div>
+                  <span className={styles.servicoPreco}>{formatarEuros(s.preco)}</span>
+                </div>
+              ))}
             </div>
-            <span className={styles.servicoPreco}>{formatarEuros(s.preco)}</span>
           </div>
         ))}
       </div>

@@ -372,6 +372,7 @@ function PassoDiaHora({
             className={styles.navBotao}
             disabled={mesAtual <= inicioMesAtual}
             onClick={() => setMesAtual(new Date(ano, mes - 1, 1))}
+            aria-label="Mês anterior"
           >
             ‹
           </button>
@@ -380,6 +381,7 @@ function PassoDiaHora({
             type="button"
             className={styles.navBotao}
             onClick={() => setMesAtual(new Date(ano, mes + 1, 1))}
+            aria-label="Mês seguinte"
           >
             ›
           </button>
@@ -400,6 +402,8 @@ function PassoDiaHora({
                 disabled={!disponivel}
                 className={`${styles.dia} ${disponivel ? styles.diaDisponivel : ""} ${selecionado ? styles.diaSelecionado : ""}`}
                 onClick={() => setDiaSelecionado(chave)}
+                aria-label={data.toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" })}
+                aria-pressed={selecionado}
               >
                 {data.getDate()}
               </button>
@@ -425,6 +429,7 @@ function PassoDiaHora({
                       key={h}
                       className={`${styles.horaBotao} ${horaSelecionada === h ? styles.horaBotaoSelecionada : ""}`}
                       onClick={() => setHoraSelecionada(h)}
+                      aria-pressed={horaSelecionada === h}
                     >
                       {h}
                     </button>

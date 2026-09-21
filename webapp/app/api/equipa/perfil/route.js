@@ -1,39 +1,53 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { garantirIcsToken } from "@/lib/colaboradores";
-import { googleCalendarConfigurado } from "@/lib/googleCalendar";
+import { authOptions } from "@/infrastructure/security/AuthOptions";
+import { HttpResponse } from "@/presentation/http/HttpResponse";
+import { PostgresColaboradorRepository } from "@/infrastructure/database/repositories/PostgresColaboradorRepository";
+import { GoogleCalendarGateway } from "@/infrastructure/gateways/GoogleCalendarGateway";
+
+const colaboradorRepo = new PostgresColaboradorRepository();
+const calendarGateway = new GoogleCalendarGateway();
 
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    return HttpResponse.unauthorized("Não autenticado.");
   }
 
-  const colaborador = await prisma.colaborador.findUnique({ where: { id: session.user.id } });
-  const icsToken = await garantirIcsToken(session.user.id);
-  const icsUrl = new URL(`/api/calendario/${session.user.id}/${icsToken}.ics`, req.url).toString();
+  try {
+    let colaborador = await colaboradorRepo.findById(session.user.id);
+    let icsToken = colaborador?.icsToken;
 
-  return NextResponse.json({
-    nome: colaborador.nome,
-    email: colaborador.email,
-    googleConectado: Boolean(colaborador.googleRefreshToken),
-    googleDisponivel: googleCalendarConfigurado(),
-    icsUrl,
-  });
+    if (!icsToken) {
+      icsToken = crypto.randomBytes(24).toString("base64url");
+      colaborador = await colaboradorRepo.update(session.user.id, { icsToken });
+    }
+
+    const icsUrl = new URL(`/api/calendario/${session.user.id}/${icsToken}.ics`, req.url).toString();
+
+    return NextResponse.json({
+      nome: colaborador.nome,
+      email: colaborador.email,
+      googleConectado: Boolean(colaborador.googleRefreshToken),
+      googleDisponivel: calendarGateway.isConfigurado(),
+      icsUrl,
+    });
+  } catch (err) {
+    return HttpResponse.tratarErro(err);
+  }
 }
 
 export async function DELETE() {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    return HttpResponse.unauthorized("Não autenticado.");
   }
 
-  await prisma.colaborador.update({
-    where: { id: session.user.id },
-    data: { googleRefreshToken: null },
-  });
-
-  return NextResponse.json({ ok: true });
+  try {
+    await colaboradorRepo.update(session.user.id, { googleRefreshToken: null });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return HttpResponse.tratarErro(err);
+  }
 }

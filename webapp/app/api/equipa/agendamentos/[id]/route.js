@@ -1,33 +1,34 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { moverAgendamentoSchema } from "@/lib/schemas";
-import { inicioFimDoDiaUTC, formatDateOnly } from "@/lib/date";
-import { sincronizarGoogleCalendar, removerEventoGoogleCalendar } from "@/lib/googleCalendar";
-import { enviarWhatsApp, mensagemReagendamento, mensagemCancelamento } from "@/lib/notificacoes";
+import { authOptions } from "@/infrastructure/security/AuthOptions";
+import { moverAgendamentoSchema } from "@/presentation/validation/schemas";
+import { HttpResponse } from "@/presentation/http/HttpResponse";
+import { PostgresAgendamentoRepository } from "@/infrastructure/database/repositories/PostgresAgendamentoRepository";
+import { GoogleCalendarGateway } from "@/infrastructure/gateways/GoogleCalendarGateway";
+import { TwilioWhatsAppGateway } from "@/infrastructure/gateways/TwilioWhatsAppGateway";
+import { DateUtil } from "@/infrastructure/utils/DateUtil";
+import { HorarioSlot } from "@/domain/value-objects/HorarioSlot";
 
-function timeToMinutes(hhmm) {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-}
+const agendamentoRepo = new PostgresAgendamentoRepository();
+const calendarGateway = new GoogleCalendarGateway();
+const notificationGateway = new TwilioWhatsAppGateway();
 
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    return HttpResponse.unauthorized("Não autenticado.");
   }
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
   const parsed = moverAgendamentoSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
+    return HttpResponse.badRequest("Dados inválidos.");
   }
 
-  const atual = await prisma.agendamento.findUnique({ where: { id } });
+  const atual = await agendamentoRepo.findById(id);
   if (!atual) {
-    return NextResponse.json({ error: "Agendamento não encontrado." }, { status: 404 });
+    return HttpResponse.notFound("Agendamento não encontrado.");
   }
 
   const patch = parsed.data;
@@ -43,77 +44,67 @@ export async function PATCH(req, { params }) {
     patch.colaboradorId !== undefined;
 
   if (mudouHorarioOuColaborador) {
-    const { inicio: inicioDia, fim: fimDia } = inicioFimDoDiaUTC(novaData);
+    const { inicio: inicioDia, fim: fimDia } = DateUtil.inicioFimDoDiaUTC(novaData);
 
-    const outros = await prisma.agendamento.findMany({
-      where: {
-        id: { not: id },
-        colaboradorId: novoColaboradorId,
-        data: { gte: inicioDia, lte: fimDia },
-        status: { not: "CANCELADO" },
-      },
-      select: { horaInicio: true, horaFim: true },
-    });
-
-    const novoInicioMin = timeToMinutes(novoInicio);
-    const novoFimMin = timeToMinutes(novoFim);
-    const conflito = outros.some(
-      (o) => novoInicioMin < timeToMinutes(o.horaFim) && timeToMinutes(o.horaInicio) < novoFimMin
+    const outros = await agendamentoRepo.findByColaboradoresEData(
+      [novoColaboradorId],
+      inicioDia,
+      fimDia
     );
+
+    const novoInicioMin = HorarioSlot.timeToMinutes(novoInicio);
+    const novoFimMin = HorarioSlot.timeToMinutes(novoFim);
+
+    const conflito = outros.some(
+      (o) => o.id !== id &&
+             o.status !== "CANCELADO" &&
+             novoInicioMin < HorarioSlot.timeToMinutes(o.horaFim) &&
+             HorarioSlot.timeToMinutes(o.horaInicio) < novoFimMin
+    );
+
     if (conflito) {
-      return NextResponse.json(
-        { error: "Esse profissional já tem uma marcação nesse horário." },
-        { status: 409 }
-      );
+      return HttpResponse.conflict("Esse profissional já tem uma marcação nesse horário.");
     }
   }
 
-  const atualizado = await prisma.agendamento.update({
-    where: { id },
-    data: {
-      ...(patch.data !== undefined ? { data: novaData } : {}),
-      ...(patch.horaInicio !== undefined ? { horaInicio: patch.horaInicio } : {}),
-      ...(patch.horaFim !== undefined ? { horaFim: patch.horaFim } : {}),
-      ...(patch.colaboradorId !== undefined ? { colaboradorId: patch.colaboradorId } : {}),
-      ...(patch.pago !== undefined ? { pago: patch.pago } : {}),
-      ...(patch.metodoPagamento !== undefined ? { metodoPagamento: patch.metodoPagamento } : {}),
-      ...(patch.status !== undefined ? { status: patch.status } : {}),
-      ...(patch.observacoes !== undefined ? { observacoes: patch.observacoes } : {}),
-    },
-    include: {
-      cliente: { select: { nome: true, telefone: true } },
-      servico: { select: { titulo: true, preco: true } },
-      colaborador: { select: { id: true, nome: true } },
-    },
-  });
+  const dadosUpdate = {};
+  if (patch.data !== undefined) dadosUpdate.data = novaData;
+  if (patch.horaInicio !== undefined) dadosUpdate.horaInicio = patch.horaInicio;
+  if (patch.horaFim !== undefined) dadosUpdate.horaFim = patch.horaFim;
+  if (patch.colaboradorId !== undefined) dadosUpdate.colaboradorId = patch.colaboradorId;
+  if (patch.pago !== undefined) dadosUpdate.pago = patch.pago;
+  if (patch.metodoPagamento !== undefined) dadosUpdate.metodoPagamento = patch.metodoPagamento;
+  if (patch.status !== undefined) dadosUpdate.status = patch.status;
+  if (patch.observacoes !== undefined) dadosUpdate.observacoes = patch.observacoes;
+
+  const atualizado = await agendamentoRepo.update(id, dadosUpdate);
 
   const foiCancelado = patch.status === "CANCELADO" && atual.status !== "CANCELADO";
 
   if (foiCancelado) {
-    removerEventoGoogleCalendar(atualizado).catch(() => {});
-    enviarWhatsApp({
-      telefone: atualizado.cliente.telefone,
-      mensagem: mensagemCancelamento({
+    calendarGateway.removerEvento(atualizado).catch(() => {});
+    if (atualizado.cliente) {
+      notificationGateway.enviarCancelamento({
+        telefone: atualizado.cliente.telefone,
         nomeCliente: atualizado.cliente.nome,
-        servicoTitulo: atualizado.servico.titulo,
-        dataStr: formatDateOnly(new Date(atualizado.data)),
+        servicoTitulo: atualizado.servico?.titulo || "Serviço",
+        dataStr: DateUtil.formatDateOnly(atualizado.data),
         horaInicio: atualizado.horaInicio,
-      }),
-    }).catch(() => {});
+      }).catch(() => {});
+    }
   } else if (mudouHorarioOuColaborador && atual.status === "CONFIRMADO") {
-    // Avisa o cliente sempre que a equipa reagenda uma marcação já confirmada.
-    enviarWhatsApp({
-      telefone: atualizado.cliente.telefone,
-      mensagem: mensagemReagendamento({
+    if (atualizado.cliente) {
+      notificationGateway.enviarReagendamento({
+        telefone: atualizado.cliente.telefone,
         nomeCliente: atualizado.cliente.nome,
-        servicoTitulo: atualizado.servico.titulo,
-        dataStr: formatDateOnly(new Date(atualizado.data)),
+        servicoTitulo: atualizado.servico?.titulo || "Serviço",
+        dataStr: DateUtil.formatDateOnly(atualizado.data),
         horaInicio: atualizado.horaInicio,
-      }),
-    }).catch(() => {});
-    sincronizarGoogleCalendar(atualizado).catch(() => {});
+      }).catch(() => {});
+    }
+    calendarGateway.sincronizarEvento(atualizado).catch(() => {});
   } else if (mudouHorarioOuColaborador) {
-    sincronizarGoogleCalendar(atualizado).catch(() => {});
+    calendarGateway.sincronizarEvento(atualizado).catch(() => {});
   }
 
   return NextResponse.json({ agendamento: atualizado });

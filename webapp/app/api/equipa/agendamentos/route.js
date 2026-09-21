@@ -1,35 +1,34 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/infrastructure/security/AuthOptions";
+import { PostgresAgendamentoRepository } from "@/infrastructure/database/repositories/PostgresAgendamentoRepository";
+import { HttpResponse } from "@/presentation/http/HttpResponse";
+
+const repo = new PostgresAgendamentoRepository();
 
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    return HttpResponse.unauthorized("Não autenticado.");
   }
 
   const { searchParams } = req.nextUrl;
-  const inicio = searchParams.get("inicio");
-  const fim = searchParams.get("fim");
+  const inicio = searchParams.get("inicio") || searchParams.get("start");
+  const fim = searchParams.get("fim") || searchParams.get("end");
   const colaboradorId = searchParams.get("colaboradorId");
 
   if (!inicio || !fim) {
-    return NextResponse.json({ error: "Falta o intervalo de datas." }, { status: 400 });
+    return HttpResponse.badRequest("Falta o intervalo de datas.");
   }
 
-  const agendamentos = await prisma.agendamento.findMany({
-    where: {
-      data: { gte: new Date(inicio), lte: new Date(fim) },
-      ...(colaboradorId ? { colaboradorId } : {}),
-    },
-    include: {
-      cliente: { select: { nome: true, telefone: true } },
-      servico: { select: { titulo: true, preco: true } },
-      colaborador: { select: { id: true, nome: true } },
-    },
-    orderBy: { data: "asc" },
-  });
-
-  return NextResponse.json({ agendamentos });
+  try {
+    const agendamentos = await repo.findParaEquipa({
+      colaboradorId,
+      dataInicio: inicio,
+      dataFim: fim,
+    });
+    return NextResponse.json({ agendamentos });
+  } catch (err) {
+    return HttpResponse.tratarErro(err);
+  }
 }

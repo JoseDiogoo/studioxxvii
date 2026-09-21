@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-15T00:00:00.000Z",
+  "title": "Design System: Studio XXVII",
+  "extensions": {
+    "colorMeta": {
+      "noir": {
+        "role": "neutral",
+        "displayName": "Noir Carvão",
+        "canonical": "#141210",
+        "tonalRamp": ["#0b0a09", "#1d1a17", "#332e29", "#4a423b", "#655a4e", "#83766a", "#b3a290", "#ece4d6"]
+      },
+      "noir-suave": {
+        "role": "neutral",
+        "displayName": "Noir Suave",
+        "canonical": "#1d1a15"
+      },
+      "creme": {
+        "role": "neutral",
+        "displayName": "Creme Quente",
+        "canonical": "#f6f1e7",
+        "tonalRamp": ["#241f16", "#3c3527", "#574e3c", "#746a54", "#948a70", "#b6ab8e", "#d8cfb4", "#f6f1e7"]
+      },
+      "creme-cartao": {
+        "role": "neutral",
+        "displayName": "Creme Cartão",
+        "canonical": "#efe7d6"
+      },
+      "dourado": {
+        "role": "primary",
+        "displayName": "Dourado Barbeiro",
+        "canonical": "#c9a35f",
+        "tonalRamp": ["#2c2110", "#4a3819", "#6a4f23", "#8a672c", "#a9823f", "#c9a35f", "#ddc08a", "#f3e8d3"]
+      },
+      "dourado-escuro": {
+        "role": "primary",
+        "displayName": "Dourado Escuro",
+        "canonical": "#856526"
+      },
+      "texto": {
+        "role": "neutral",
+        "displayName": "Texto Principal",
+        "canonical": "#201c17"
+      },
+      "texto-suave": {
+        "role": "neutral",
+        "displayName": "Texto Suave",
+        "canonical": "#6b6255"
+      },
+      "linha": {
+        "role": "neutral",
+        "displayName": "Linha Divisória",
+        "canonical": "#e4dbc8"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Serif", "purpose": "Títulos, preços e o logótipo — nunca em UI funcional." },
+      "headline": { "displayName": "Headline Serif", "purpose": "Títulos de secção." },
+      "body": { "displayName": "Body Sans", "purpose": "Texto corrido, formulários, navegação." },
+      "label": { "displayName": "Label Sans Maiúsculo", "purpose": "Kickers, etiquetas, cabeçalhos de coluna." }
+    },
+    "shadows": [
+      { "name": "elevacao-cartao", "value": "0 1px 2px rgba(20, 18, 16, 0.06), 0 20px 48px -20px rgba(20, 18, 16, 0.22)", "purpose": "Cartões físicos brancos sobre fundo creme (cartão de marcação, login)." },
+      { "name": "elevacao-imagem", "value": "0 30px 60px -20px rgba(20, 18, 16, 0.35)", "purpose": "Fotografia e mapa em destaque." },
+      { "name": "painel-flutuante", "value": "0 20px 48px -20px rgba(0, 0, 0, 0.6)", "purpose": "Painéis sobre fundo escuro (menu mobile)." }
+    ],
+    "motion": [
+      { "name": "girar-roda", "value": "rotateY(360deg) 36s linear infinite", "purpose": "Rotação contínua da Roda de Ferramentas no hero; desliga com prefers-reduced-motion." },
+      { "name": "ease-hover", "value": "0.15s ease (color/background/border-color/transform)", "purpose": "Resposta padrão a hover/focus em botões, links e cartões." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "500px" },
+      { "name": "md", "value": "700px" },
+      { "name": "nav", "value": "760px" },
+      { "name": "lg", "value": "860px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão Primário (Dourado)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "CTA principal — 'Marcar horário'. Único botão preenchido a cor de acento.",
+      "html": "<button class=\"ds-btn-primary\">Marcar horário</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; background: var(--dourado, #c9a35f); color: var(--noir, #141210); padding: 11px 24px; border-radius: 999px; font-family: Inter, sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.02em; border: none; cursor: pointer; transition: background 0.15s, transform 0.15s; } .ds-btn-primary:hover { background: #d9b46f; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid var(--dourado, #c9a35f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botão Escuro (Noir)",
+      "kind": "button",
+      "refersTo": "button-dark",
+      "description": "Ação de confirmação neutra — avançar passo em /marcar, ações em /equipa.",
+      "html": "<button class=\"ds-btn-dark\">Confirmar marcação</button>",
+      "css": ".ds-btn-dark { background: var(--noir, #141210); color: #ffffff; border: none; border-radius: 999px; padding: 13px 28px; font-family: Inter, sans-serif; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: background 0.15s, transform 0.15s; } .ds-btn-dark:hover { background: #24201a; transform: translateY(-1px); } .ds-btn-dark:disabled { opacity: 0.35; cursor: not-allowed; } .ds-btn-dark:focus-visible { outline: 2px solid var(--dourado, #c9a35f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botão Contorno",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Ação secundária sobre fundo escuro ou claro.",
+      "html": "<button class=\"ds-btn-outline\">Ver serviços</button>",
+      "css": ".ds-btn-outline { background: transparent; color: var(--creme, #f6f1e7); padding: 11px 24px; border-radius: 999px; font-family: Inter, sans-serif; font-weight: 600; font-size: 0.85rem; border: 1px solid rgba(246, 241, 231, 0.35); cursor: pointer; transition: border-color 0.15s, color 0.15s; } .ds-btn-outline:hover { border-color: var(--dourado, #c9a35f); color: var(--dourado, #c9a35f); } .ds-btn-outline:focus-visible { outline: 2px solid var(--dourado, #c9a35f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Cartão Principal",
+      "kind": "card",
+      "refersTo": "card-primary",
+      "description": "Superfície branca 'física' que contém o fluxo de marcação ou o login — a única superfície branca do sistema.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-titulo\">Escolhe o dia</div><div class=\"ds-card-corpo\">Só os dias com vaga ficam disponíveis.</div></div>",
+      "css": ".ds-card { background: #ffffff; color: var(--texto, #201c17); border-radius: 20px; overflow: hidden; border: 1px solid rgba(20, 18, 16, 0.04); box-shadow: 0 1px 2px rgba(20, 18, 16, 0.06), 0 20px 48px -20px rgba(20, 18, 16, 0.22); padding: 24px; } .ds-card-titulo { font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; } .ds-card-corpo { color: var(--texto-suave, #6b6255); font-size: 0.94rem; line-height: 1.6; }"
+    },
+    {
+      "name": "Linha de Serviço Selecionável",
+      "kind": "custom",
+      "refersTo": "service-row",
+      "description": "Linha tipo carrinho na lista de serviços de /marcar — checkbox circular dourado com check branco.",
+      "html": "<label class=\"ds-servico-linha\"><input type=\"checkbox\" class=\"ds-servico-check\" checked /><span class=\"ds-servico-info\"><span class=\"ds-servico-nome\">Corte + Barba</span><span class=\"ds-servico-meta\">45 min</span></span><span class=\"ds-servico-preco\">22,00 €</span></label>",
+      "css": ".ds-servico-linha { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--linha, #e4dbc8); cursor: pointer; font-family: Inter, sans-serif; } .ds-servico-check { appearance: none; width: 22px; height: 22px; margin: 0; border-radius: 50%; border: 2px solid #d8d0bd; flex-shrink: 0; position: relative; cursor: pointer; transition: background 0.15s, border-color 0.15s; } .ds-servico-check:checked { background: var(--dourado, #c9a35f); border-color: var(--dourado, #c9a35f); } .ds-servico-check:checked::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; } .ds-servico-info { flex: 1; display: flex; flex-direction: column; gap: 2px; } .ds-servico-nome { font-weight: 600; font-size: 0.98rem; color: var(--texto, #201c17); } .ds-servico-meta { font-size: 0.82rem; color: var(--texto-suave, #6b6255); } .ds-servico-preco { font-family: 'Playfair Display', Georgia, serif; font-size: 1.15rem; font-weight: 700; color: var(--dourado, #c9a35f); white-space: nowrap; }"
+    },
+    {
+      "name": "Seletor de Dia",
+      "kind": "custom",
+      "refersTo": "day-picker",
+      "description": "Célula circular do calendário de marcação — dourada quando selecionada.",
+      "html": "<div class=\"ds-dias\"><button class=\"ds-dia ds-dia-disponivel\">12</button><button class=\"ds-dia ds-dia-selecionado\">13</button><button class=\"ds-dia ds-dia-disponivel\">14</button><button class=\"ds-dia\" disabled>15</button></div>",
+      "css": ".ds-dias { display: flex; gap: 8px; } .ds-dia { width: 40px; aspect-ratio: 1; border-radius: 50%; background: transparent; color: #d5cfbf; border: none; font-family: Inter, sans-serif; font-size: 0.88rem; font-weight: 500; transition: background 0.15s, color 0.15s, box-shadow 0.15s; } .ds-dia-disponivel { color: var(--texto, #201c17); cursor: pointer; font-weight: 700; background: var(--creme-cartao, #efe7d6); } .ds-dia-disponivel:hover { background: #f1e4c4; } .ds-dia-selecionado { background: var(--dourado, #c9a35f) !important; color: #ffffff; box-shadow: 0 6px 16px -4px rgba(201, 163, 95, 0.6); }"
+    },
+    {
+      "name": "Logo Badge",
+      "kind": "custom",
+      "refersTo": "logo-badge",
+      "description": "Medalhão circular de marca — selo de casa de moeda, usado no cabeçalho, footer e no centro da Roda de Ferramentas.",
+      "html": "<div class=\"ds-badge\"><span class=\"ds-badge-studio\">STUDIO</span><span class=\"ds-badge-linha\"></span><span class=\"ds-badge-ano\">XXVII</span></div>",
+      "css": ".ds-badge { width: 72px; height: 72px; border-radius: 50%; background: #f5efe6; border: 1.5px solid #141210; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Playfair Display', Georgia, serif; flex-shrink: 0; } .ds-badge-studio { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.045em; color: #141210; line-height: 1; } .ds-badge-linha { width: 46%; height: 1px; background: #141210; margin: 3px 0; } .ds-badge-ano { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.03em; color: #141210; line-height: 1; }"
+    },
+    {
+      "name": "Roda de Ferramentas",
+      "kind": "custom",
+      "refersTo": "tools-wheel",
+      "description": "Anel de ícones de barbeiro em rotação 3D contínua à volta do Logo Badge no hero — único motion ambiente do sistema.",
+      "html": "<div class=\"ds-roda-palco\"><div class=\"ds-roda-anel\"><span class=\"ds-roda-item\" style=\"transform: translate(-50%, -50%) rotateY(0deg) translateZ(80px);\">✂️</span><span class=\"ds-roda-item\" style=\"transform: translate(-50%, -50%) rotateY(120deg) translateZ(80px);\">🪒</span><span class=\"ds-roda-item\" style=\"transform: translate(-50%, -50%) rotateY(240deg) translateZ(80px);\">💈</span></div><div class=\"ds-roda-centro\"><div class=\"ds-badge\" style=\"width:56px;height:56px;\"><span class=\"ds-badge-studio\" style=\"font-size:0.46rem;\">STUDIO</span><span class=\"ds-badge-linha\"></span><span class=\"ds-badge-ano\" style=\"font-size:0.56rem;\">XXVII</span></div></div></div>",
+      "css": ".ds-roda-palco { position: relative; width: 200px; height: 200px; margin: 0 auto; perspective: 900px; } .ds-roda-anel { position: absolute; inset: 0; transform-style: preserve-3d; animation: ds-girar 36s linear infinite; } .ds-roda-item { position: absolute; top: 50%; left: 50%; display: flex; align-items: center; justify-content: center; color: var(--dourado, #c9a35f); opacity: 0.8; font-size: 1.4rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); } .ds-roda-centro { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; } @keyframes ds-girar { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } } @media (prefers-reduced-motion: reduce) { .ds-roda-anel { animation: none; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Selo XXVII",
+    "overview": "Studio XXVII lê-se como um selo cunhado, não como uma app: um medalhão circular a preto e dourado, sobreposto a superfícies em carvão profundo e creme quente, com o rigor de tipografia editorial (Playfair Display para tudo o que é declaração — títulos, preços, o próprio logótipo) e a neutralidade funcional do Inter para o que é interface e leitura corrida. A paleta é intencionalmente restrita — preto/carvão, creme e um único dourado — e o dourado é usado com disciplina: aparece para marcar o que importa (CTA, preço, estado selecionado, o brilho do \"XXVII\"), nunca como decoração de fundo. Este não é o dourado exuberante de um cassino; é o dourado discreto de um instrumento de barbeiro bem cuidado.\n\nA composição mistura dois registos deliberadamente: elementos interativos são quase todos circulares ou em pílula (botões, avatares, dias do calendário, o próprio badge do logótipo) — convidam ao toque — enquanto a fotografia da loja é recortada quase a esquadria (4px de raio), como uma prova de contacto editorial. Essa tensão entre o redondo/macio da interface e o reto/nítido da imagem é uma escolha de sistema, não um acidente.",
+    "keyCharacteristics": [
+      "Tríade cromática restrita — noir / creme / dourado — sem cores secundárias.",
+      "Serifa de declaração (Playfair Display) + sans neutro (Inter), nunca misturados dentro do mesmo papel.",
+      "Interações redondas (pílulas, círculos) contra fotografia de cantos quase retos.",
+      "Elevação suave e difusa, nunca dura — cartões 'flutuam', não 'batem'.",
+      "Dourado como pontuação rara, não como preenchimento."
+    ],
+    "rules": [
+      { "name": "The Rare Gold Rule", "body": "O dourado nunca preenche uma área grande nem serve de fundo. Existe como traço, texto ou estado — CTA, preço, seleção — e cobre visivelmente menos de 10% de qualquer ecrã.", "section": "colors" },
+      { "name": "The One Display Rule", "body": "Playfair Display só aparece em títulos, preços e no logótipo — nunca em corpo de texto, nunca em elementos de formulário ou navegação, por mais pequeno que seja o uso.", "section": "typography" },
+      { "name": "The Diffuse-Only Rule", "body": "Nenhuma sombra no sistema é dura ou próxima. Toda a elevação lê-se como luz ambiente a separar um objeto do fundo, nunca como um contorno técnico.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do manter o dourado como pontuação — preço, CTA, seleção — nunca como preenchimento de fundo ou área grande (The Rare Gold Rule).",
+      "Do reservar o Playfair Display para títulos, preços e o logótipo; tudo o resto em Inter (The One Display Rule).",
+      "Do manter sombras difusas e largas nos cartões físicos (branco sobre creme); nunca sombras duras ou justas.",
+      "Do manter os botões sempre em pílula total (999px) — é o único raio de canto usado em elementos de ação.",
+      "Do manter a fotografia com cantos quase retos (4px) como contraponto deliberado às formas redondas da interface."
+    ],
+    "donts": [
+      "Don't introduzir uma segunda cor de acento — o sistema depende da raridade do único dourado para funcionar.",
+      "Don't usar preto puro (#000) — o noir do sistema é sempre #141210 ou a sua variante #1d1a15.",
+      "Don't aplicar sombras duras/próximas ou contornos técnicos de elevação — quebra a leitura 'editorial/física' do sistema.",
+      "Don't animar elementos fora do hero sem motivo funcional — a Roda de Ferramentas é a exceção deliberada, não o padrão.",
+      "Don't substituir a voz de marca ('Born to be different', 'Criando identidades.') por linguagem genérica de barbearia."
+    ]
+  }
+}

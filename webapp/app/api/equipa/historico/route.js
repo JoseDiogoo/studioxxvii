@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/infrastructure/security/AuthOptions";
+import { HttpResponse } from "@/presentation/http/HttpResponse";
+import { postgresDb } from "@/infrastructure/database/postgres";
 
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   if (!session) {
-    return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+    return HttpResponse.unauthorized("Não autenticado.");
   }
 
   const { searchParams } = req.nextUrl;
@@ -26,23 +27,27 @@ export async function GET(req) {
     ...(servicoId ? { servicoId } : {}),
     ...(pago === "true" ? { pago: true } : {}),
     ...(pago === "false" ? { pago: false } : {}),
-    ...(q ? { cliente: { nome: { contains: q } } } : {}),
+    ...(q ? { cliente: { nome: { contains: q, mode: "insensitive" } } } : {}),
   };
 
-  const [total, agendamentos] = await Promise.all([
-    prisma.agendamento.count({ where }),
-    prisma.agendamento.findMany({
-      where,
-      include: {
-        cliente: { select: { nome: true, telefone: true } },
-        servico: { select: { titulo: true } },
-        colaborador: { select: { nome: true } },
-      },
-      orderBy: [{ data: "desc" }, { horaInicio: "desc" }],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-  ]);
+  try {
+    const [total, agendamentos] = await Promise.all([
+      postgresDb.agendamento.count({ where }),
+      postgresDb.agendamento.findMany({
+        where,
+        include: {
+          cliente: { select: { nome: true, telefone: true } },
+          servico: { select: { titulo: true } },
+          colaborador: { select: { nome: true } },
+        },
+        orderBy: [{ data: "desc" }, { horaInicio: "desc" }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
 
-  return NextResponse.json({ total, page, pageSize, agendamentos });
+    return NextResponse.json({ total, page, pageSize, agendamentos });
+  } catch (err) {
+    return HttpResponse.tratarErro(err);
+  }
 }
