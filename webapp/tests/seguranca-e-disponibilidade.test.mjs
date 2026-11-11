@@ -52,6 +52,16 @@ test("serviço de 1h20 (Pack 27) só começa se acabar até ao fecho", () => {
   assert.equal(slots.at(-1), "11:30"); // 11:30 + 1h20 = 12:50
 });
 
+test("até às 20:00 de trabalho: a última marcação começa às 19:00 e nenhum serviço acaba depois das 20:00", () => {
+  const h = [{ colaboradorId: "c1", inicio: "10:00", fim: "20:00" }];
+  const horas = (duracaoMinutos) =>
+    CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({ servicosPreparados: servico(duracaoMinutos), horarios: h, agendamentos: [] }).map((s) => s.horaInicio);
+  assert.equal(horas(45).at(-1), "19:00"); // 19:00 + 45 = 19:45
+  assert.equal(horas(30).at(-1), "19:00"); // nunca 19:30, mesmo que coubesse
+  assert.equal(horas(80).at(-1), "18:30"); // 18:30 + 1h20 = 19:50; 19:00 acabava às 20:20
+  assert.ok(!horas(45).includes("20:00"));
+});
+
 test("IP vem de X-Real-IP; X-Forwarded-For falsificado é ignorado", () => {
   const req = (h) => ({ headers: new Headers(h) });
   assert.equal(RateLimiter.ipDoPedido(req({ "x-real-ip": "1.2.3.4", "x-forwarded-for": "9.9.9.9" })), "1.2.3.4");

@@ -1,6 +1,9 @@
 import { HorarioSlot } from "../value-objects/HorarioSlot";
 
 const SLOT_STEP_MINUTES = 30;
+// A última marcação pode começar às 19:00. O fim do serviço só é limitado pelo horário de trabalho (20:00).
+// shortcut: 19:00 fixo no código, mover para a BD se o barbeiro quiser mudar sem pedir alteração.
+const ULTIMO_INICIO_MINUTOS = 19 * 60;
 
 export class CalculadoraDisponibilidadeService {
   /**
@@ -107,6 +110,7 @@ export class CalculadoraDisponibilidadeService {
 
     const validos = [];
     for (const start of [...inicios].sort((a, b) => a - b)) {
+      if (start > ULTIMO_INICIO_MINUTOS) continue;
       if (ehHoje && start <= minutosAgora) continue;
 
       const atribuicao = this.tentarEncaixe(start, servicosPreparados, horarioPorColaborador, ocupadoPorColaborador);
