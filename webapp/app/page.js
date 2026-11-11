@@ -14,10 +14,10 @@ const SERVICOS_FALLBACK = [
   { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 45, descricao: "Corte de cabelo personalizado, ao teu estilo." },
   { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 45, descricao: "Corte de cabelo com lavagem capilar." },
   { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 60, descricao: "Corte de cabelo e barba." },
-  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 60, descricao: "Corte de cabelo, barba com vaporizador e toalha quente, e lavagem." },
+  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 60, descricao: "Corte de cabelo, barba e lavagem." },
   { titulo: "Só Barba", preco: 10, duracaoMinutos: 30, descricao: "Arranjo de barba." },
   { titulo: "Black Mask", preco: 10, duracaoMinutos: 30, descricao: "Limpeza profunda da pele: remove impurezas e controla a oleosidade." },
-  { titulo: "Pack 27", preco: 30, duracaoMinutos: 80, descricao: "Corte de cabelo, sobrancelha à navalha, barba com vaporizador e toalha quente, e lavagem." },
+  { titulo: "Pack 27", preco: 30, duracaoMinutos: 80, descricao: "Corte de cabelo, sobrancelhas à navalha, barba com toalha quente ou vaporizador, e lavagem." },
 ];
 
 // A faixa de fotos lê a pasta public/fotos/galeria: basta largar lá um ficheiro (jpg/png/webp) e ele passa a aparecer.
