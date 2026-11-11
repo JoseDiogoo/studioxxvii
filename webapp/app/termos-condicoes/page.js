@@ -17,11 +17,6 @@ export default function TermosCondicoesPage() {
         <h1 className={styles.titulo}>Termos e Condições</h1>
         <p className={styles.atualizado}>Última atualização: agosto de 2026</p>
 
-        <div className={styles.aviso}>
-          Este documento não substitui aconselhamento jurídico. Descreve, em linguagem
-          simples, as condições em que o Studio XXVII presta os seus serviços através deste
-          site. Ao marcares um horário em <strong>/marcar</strong>, aceitas estas condições.
-        </div>
 
         <div className={styles.indice}>
           <strong>Índice</strong>
@@ -44,14 +39,14 @@ export default function TermosCondicoesPage() {
           <p>
             O Studio XXVII é uma barbearia com estabelecimento em R. Prof. Eng. Joaquim Vieira
             Natividade, Alcobaça, aberta ao público de Terça a Sábado, das 10h às 19h. Este site
-            permite marcar serviços de barbearia online, através da página <strong>/marcar</strong>.
+            permite marcar serviços de barbearia online, através da página de marcação.
             Ao efetuares uma marcação confirmas que tens capacidade legal para o fazer e que os
             dados que forneces (nome, telefone e, opcionalmente, email) são verdadeiros e
             atualizados.
           </p>
 
           <h2 id="marcacao">2. Como funciona a marcação</h2>
-          <p>O processo de marcação em <strong>/marcar</strong> segue estes passos:</p>
+          <p>O processo de marcação segue estes passos:</p>
           <ol>
             <li>Escolhes um ou mais serviços;</li>
             <li>Escolhes o profissional (ou &ldquo;sem preferência&rdquo;);</li>
@@ -67,7 +62,7 @@ export default function TermosCondicoesPage() {
 
           <h2 id="precos">3. Preços e serviços</h2>
           <p>
-            Os preços apresentados em <strong>/marcar</strong> e na página principal do site
+            Os preços apresentados na página de marcação e na página principal do site
             incluem já os impostos aplicáveis e correspondem ao preçário em vigor no Studio
             XXVII à data da consulta. Reservamo-nos o direito de atualizar preços e a duração
             estimada de cada serviço sem aviso prévio; a marcação já confirmada mantém, no

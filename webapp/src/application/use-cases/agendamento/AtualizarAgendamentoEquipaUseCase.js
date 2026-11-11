@@ -1,3 +1,4 @@
+import { log } from "@/infrastructure/logger";
 import { EntidadeNaoEncontradaError, RegraNegocioError } from "@/domain/errors/DomainError";
 import { DateUtil } from "@/infrastructure/utils/DateUtil";
 import { HorarioSlot } from "@/domain/value-objects/HorarioSlot";
@@ -66,6 +67,13 @@ export class AtualizarAgendamentoEquipaUseCase {
         })
       : await this.agendamentoRepository.update(id, dados);
 
+    log("info", "equipa", "marcação atualizada", {
+      id,
+      de: atual.status,
+      para: atualizado.status,
+      mudouHora: mudouHorarioOuColaborador,
+      campos: Object.keys(patch),
+    });
     this._notificar({ atual, atualizado, patch, mudouHorarioOuColaborador });
     return atualizado;
   }

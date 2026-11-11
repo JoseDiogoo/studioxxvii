@@ -1,4 +1,5 @@
 import { INotificationGateway } from "@/application/ports/INotificationGateway";
+import { log } from "@/infrastructure/logger";
 import { Telefone } from "@/domain/value-objects/Telefone";
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -94,7 +95,10 @@ export class TwilioWhatsAppGateway extends INotificationGateway {
     // Email via Resend. shortcut: remetente onboarding@resend.dev só envia para o email da conta Resend; trocar por endereço do domínio quando existir.
     const destino = process.env.BARBER_EMAIL;
     const apikey = process.env.RESEND_API_KEY;
-    if (!destino || !apikey) return { enviado: false };
+    if (!destino || !apikey) {
+      log("aviso", "email", "aviso ao barbeiro NÃO enviado: falta RESEND_API_KEY ou BARBER_EMAIL");
+      return { enviado: false };
+    }
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -107,10 +111,14 @@ export class TwilioWhatsAppGateway extends INotificationGateway {
           text: `Cliente: ${nomeCliente}\nTelefone: ${telefoneCliente}\nServiço: ${servicoTitulo}\nData: ${dataStr} às ${horaInicio}`,
         }),
       });
-      if (!res.ok) console.error("[notificacoes] Resend falhou:", await res.text().catch(() => res.status));
+      if (!res.ok) {
+        log("erro", "email", "Resend recusou o aviso ao barbeiro", { estado: res.status, resposta: (await res.text().catch(() => "")).slice(0, 300) });
+      } else {
+        log("info", "email", "aviso ao barbeiro enviado", { dataMarcacao: dataStr, hora: horaInicio });
+      }
       return { enviado: res.ok };
     } catch (err) {
-      console.error("[notificacoes] Erro Resend:", err);
+      log("erro", "email", "falha de rede ao enviar aviso ao barbeiro", { mensagem: err?.message });
       return { enviado: false };
     }
   }

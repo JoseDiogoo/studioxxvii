@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { log } from "@/infrastructure/logger";
 import { DomainError, SlotIndisponivelError, EntidadeNaoEncontradaError } from "@/domain/errors/DomainError";
 
 export class HttpResponse {
@@ -52,18 +53,21 @@ export class HttpResponse {
   }
 
   static tratarErro(err) {
-    console.error("[API Error]:", err);
-
     if (err instanceof SlotIndisponivelError) {
+      log("aviso", "marcacao", "hora já não está disponível", { motivo: err.message });
       return this.conflict(err.message);
     }
     if (err instanceof EntidadeNaoEncontradaError) {
+      log("aviso", "marcacao", "recurso não encontrado", { motivo: err.message });
       return this.notFound(err.message);
     }
     if (err instanceof DomainError) {
+      log("aviso", "marcacao", "pedido recusado pelas regras", { motivo: err.message });
       return this.badRequest(err.message);
     }
     // Erros inesperados ficam só no log do servidor: a mensagem interna não deve chegar ao cliente.
+    log("erro", "erro", "erro inesperado no servidor", { nome: err?.name, mensagem: err?.message });
+    console.error(err);
     return this.serverError();
   }
 }

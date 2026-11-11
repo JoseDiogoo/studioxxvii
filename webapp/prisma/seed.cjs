@@ -13,13 +13,13 @@ if (DEFAULT_PASSWORD.length < 10) {
 
 const SERVICOS = [
   { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Corte Criança", preco: 13, duracaoMinutos: 30 },
+  { titulo: "Corte Criança", preco: 15, duracaoMinutos: 30 },
   { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 30 },
-  { titulo: "Corte + Lavagem", preco: 17, duracaoMinutos: 40 },
-  { titulo: "Corte + Barba", preco: 22, duracaoMinutos: 45 },
-  { titulo: "Rapar + Barba", preco: 18, duracaoMinutos: 40 },
-  { titulo: "Corte + Barba + Lavagem", preco: 24, duracaoMinutos: 55 },
-  { titulo: "Corte + Sobrancelha", preco: 16, duracaoMinutos: 30 },
+  { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 40 },
+  { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 45 },
+  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 55 },
+  { titulo: "Black Mask", preco: 10, duracaoMinutos: 20 },
+  { titulo: "Pack 27", preco: 30, duracaoMinutos: 75 },
 ];
 
 const DIAS_TERCA_A_SABADO = [2, 3, 4, 5, 6];
@@ -60,6 +60,12 @@ async function main() {
     }
     servicos.push(servico);
   }
+
+  // Serviços que já não existem na tabela de preços deixam de aparecer no site (ficam na BD por causa das marcações antigas).
+  await prisma.servico.updateMany({
+    where: { salaoId: salao.id, titulo: { notIn: SERVICOS.map((s) => s.titulo) } },
+    data: { ativo: false },
+  });
 
   // 3. Upsert Colaboradores
   const colaboradoresPlaceholder = [

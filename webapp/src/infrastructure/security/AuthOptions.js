@@ -1,3 +1,4 @@
+import { log } from "@/infrastructure/logger";
 import CredentialsModule from "next-auth/providers/credentials";
 import { RateLimiter } from "./RateLimiter";
 import { PostgresColaboradorRepository } from "../database/repositories/PostgresColaboradorRepository";
@@ -58,22 +59,23 @@ export const authOptions = {
         const chave = `${email}|${RateLimiter.ipDoPedido(req)}`;
         // Teto por IP contra quem tenta muitos emails diferentes.
         if (RateLimiter.excedeu(`login-ip:${RateLimiter.ipDoPedido(req)}`, 30, 15 * 60_000)) {
-          console.warn(`[seguranca] login bloqueado: demasiadas tentativas do ip ${RateLimiter.ipDoPedido(req)}`);
+          log("aviso", "seguranca", "login bloqueado: demasiadas tentativas do mesmo IP", { ip: RateLimiter.ipDoPedido(req) });
           throw new Error("Demasiadas tentativas. Tenta novamente daqui a uns minutos.");
         }
         if (RateLimiter.isLoginRateLimited(chave)) {
-          console.warn(`[seguranca] login bloqueado: ${email} (ip ${RateLimiter.ipDoPedido(req)})`);
+          log("aviso", "seguranca", "login bloqueado: demasiadas tentativas", { email, ip: RateLimiter.ipDoPedido(req) });
           throw new Error("Demasiadas tentativas. Tenta novamente daqui a uns minutos.");
         }
 
         const usuario = await autenticarUseCase.execute({ email, password });
         if (!usuario) {
-          console.warn(`[seguranca] login falhado: ${email} (ip ${RateLimiter.ipDoPedido(req)})`);
+          log("aviso", "login", "login falhado (password ou email errados)", { email, ip: RateLimiter.ipDoPedido(req) });
           RateLimiter.registarTentativaLogin(chave, false);
           return null;
         }
 
         RateLimiter.registarTentativaLogin(chave, true);
+        log("info", "login", "login da equipa com sucesso", { email });
         return {
           id: usuario.id,
           name: usuario.nome,

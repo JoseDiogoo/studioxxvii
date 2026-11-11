@@ -12,7 +12,7 @@ export const metadata = {
 const PERGUNTAS = [
   {
     q: "Como faço uma marcação?",
-    a: "Entra em /marcar, escolhe um ou mais serviços, o profissional (ou \"sem preferência\"), o dia e a hora disponíveis, confirma os teus dados de contacto e pronto — a marcação fica confirmada de imediato, sem qualquer pagamento nesse momento.",
+    a: "Entra na página de marcação, escolhe um ou mais serviços, o profissional (ou \"sem preferência\"), o dia e a hora disponíveis, confirma os teus dados de contacto e pronto — a marcação fica confirmada de imediato, sem qualquer pagamento nesse momento.",
   },
   {
     q: "Quando é que pago?",
