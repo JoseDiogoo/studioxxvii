@@ -15,7 +15,7 @@ export class TwilioWhatsAppGateway extends INotificationGateway {
 
   async _enviar(telefone, mensagem) {
     if (!this.isConfigurado()) {
-      console.warn("[notificacoes] Twilio não configurado — mensagem não enviada:", mensagem);
+      console.warn("[notificacoes] Twilio não configurado — mensagem não enviada.");
       return { enviado: false };
     }
 

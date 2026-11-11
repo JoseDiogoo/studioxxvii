@@ -22,6 +22,19 @@ if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-p
   }
 }
 
+// Cache curta em memória para não ir à BD a cada pedido autenticado.
+const cacheAtivo = new Map();
+async function colaboradorAtivo(id) {
+  const agora = Date.now();
+  const c = cacheAtivo.get(id);
+  if (c && agora - c.em < 60_000) return c.ativo;
+  const colaborador = await colaboradorRepo.findById(id);
+  const ativo = Boolean(colaborador?.ativo);
+  if (cacheAtivo.size > 500) cacheAtivo.clear();
+  cacheAtivo.set(id, { ativo, em: agora });
+  return ativo;
+}
+
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   // Sessão de 7 dias (o padrão do next-auth são 30) e renovada a cada 12 h de uso.
@@ -75,10 +88,17 @@ export const authOptions = {
       if (user) {
         token.colaboradorId = user.id;
         token.salaoId = user.salaoId;
+        return token;
+      }
+      // Sessão já existente: um colaborador desativado ou apagado perde o acesso (no máximo 1 min depois), não só ao fim dos 7 dias.
+      if (token.colaboradorId && !(await colaboradorAtivo(token.colaboradorId))) {
+        return {};
       }
       return token;
     },
     async session({ session, token }) {
+      // Token invalidado (colaborador desativado): o objeto vazio faz o next-auth tratar como sem sessão.
+      if (!token.colaboradorId) return {};
       if (session.user) {
         session.user.id = token.colaboradorId;
         session.user.salaoId = token.salaoId;

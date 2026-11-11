@@ -145,3 +145,5 @@ depois do corte.
 8. **Logs:** tentativas de login falhadas e bloqueios aparecem como `[seguranca]` em `journalctl -u studioxxvii`.
 
 9. **Monitorização:** `GET /api/health` responde 200 se a BD está ligada (503 se não). Aponta um serviço de uptime gratuito (ex. UptimeRobot) para `https://studioxxvii.pt/api/health`.
+10. **Plataformas sem nginx (Render, Railway...):** define `TRUSTED_PROXY_HOPS=1` (nº de proxies da plataforma à frente da app) para os limites de pedidos verem o IP real. Confirma depois com dois IPs diferentes que o limite é contado em separado. Sem nginx nem esta variável, todos os pedidos partilham o mesmo limite.
+11. **Sessões:** um colaborador desativado (`ativo=false`) perde o acesso em até 1 minuto. Para o desativar: `UPDATE "Colaborador" SET ativo = false WHERE email = '...';`

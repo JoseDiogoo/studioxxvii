@@ -32,23 +32,4 @@ export class PostgresClienteRepository extends IClienteRepository {
     });
     return this._paraEntidade(item);
   }
-
-  async upsertCliente({ salaoId, nome, telefone, email = null, observacoes = null }) {
-    const item = await this.db.cliente.upsert({
-      where: { salaoId_telefone: { salaoId, telefone } },
-      update: {
-        nome,
-        email: email || null,
-        observacoes: observacoes || null,
-      },
-      create: {
-        salaoId,
-        nome,
-        telefone,
-        email: email || null,
-        observacoes: observacoes || null,
-      },
-    });
-    return this._paraEntidade(item);
-  }
 }

@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { destinoSeguro } from "./destino";
 import styles from "../equipa.module.css";
 
 function LoginForm() {
@@ -24,7 +25,7 @@ function LoginForm() {
       setErro("Email ou password incorretos, ou demasiadas tentativas. Tenta novamente.");
       return;
     }
-    router.push(searchParams.get("callbackUrl") || "/equipa");
+    router.push(destinoSeguro(searchParams.get("callbackUrl")));
   }
 
   return (

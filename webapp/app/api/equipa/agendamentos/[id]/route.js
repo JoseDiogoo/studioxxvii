@@ -4,12 +4,14 @@ import { authOptions } from "@/infrastructure/security/AuthOptions";
 import { moverAgendamentoSchema } from "@/presentation/validation/schemas";
 import { HttpResponse } from "@/presentation/http/HttpResponse";
 import { PostgresAgendamentoRepository } from "@/infrastructure/database/repositories/PostgresAgendamentoRepository";
+import { PostgresColaboradorRepository } from "@/infrastructure/database/repositories/PostgresColaboradorRepository";
 import { TwilioWhatsAppGateway } from "@/infrastructure/gateways/TwilioWhatsAppGateway";
 import { AtualizarAgendamentoEquipaUseCase } from "@/application/use-cases/agendamento/AtualizarAgendamentoEquipaUseCase";
 import { SlotIndisponivelError } from "@/domain/errors/DomainError";
 
 const useCase = new AtualizarAgendamentoEquipaUseCase({
   agendamentoRepository: new PostgresAgendamentoRepository(),
+  colaboradorRepository: new PostgresColaboradorRepository(),
   notificationGateway: new TwilioWhatsAppGateway(),
 });
 

@@ -1,3 +1,4 @@
+import { TimezoneUtil } from "@/infrastructure/utils/TimezoneUtil";
 import { CalculadoraDisponibilidadeService } from "@/domain/services/CalculadoraDisponibilidadeService";
 import { RegraNegocioError } from "@/domain/errors/DomainError";
 
@@ -66,9 +67,8 @@ export class ObterDiasDisponiveisUseCase {
       agendamentosPorDia.get(chave).push(a);
     }
 
-    const hojeUtc = new Date();
-    const hojeStr = hojeUtc.toISOString().slice(0, 10);
-    const minutosAgora = hojeUtc.getUTCHours() * 60 + hojeUtc.getUTCMinutes();
+    // "Hoje" e a hora atual são os de Lisboa (o servidor corre em UTC), como na validação da marcação.
+    const { dataStr: hojeStr, minutos: minutosAgora } = TimezoneUtil.agoraEmPortugal();
 
     const diasDisponiveis = [];
 

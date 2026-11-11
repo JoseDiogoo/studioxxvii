@@ -20,8 +20,18 @@ export class RateLimiter {
     const headers = req.headers;
     const get = (n) => (typeof headers.get === "function" ? headers.get(n) : headers[n]);
     const real = get("x-real-ip");
-    // Sem X-Real-IP (desenvolvimento local) todos partilham o mesmo balde: nunca confiar em X-Forwarded-For.
-    return real ? String(real).trim() : "desconhecido";
+    if (real) return String(real).trim();
+
+    // Plataformas sem nginx (Render, Railway...): TRUSTED_PROXY_HOPS = nº de proxies da plataforma à frente da app.
+    // Cada proxy acrescenta o IP que viu no fim de X-Forwarded-For, por isso o IP do cliente é a entrada a contar do fim.
+    const hops = Number(process.env.TRUSTED_PROXY_HOPS || 0);
+    const xff = get("x-forwarded-for");
+    if (hops > 0 && xff) {
+      const lista = String(xff).split(",").map((s) => s.trim()).filter(Boolean);
+      if (lista.length) return lista[Math.max(0, lista.length - hops)];
+    }
+    // Sem nenhum dos dois (desenvolvimento local) todos partilham o mesmo balde: nunca confiar às cegas em X-Forwarded-For.
+    return "desconhecido";
   }
 
   /** Limite genérico por chave numa janela de tempo. Devolve true se excedeu o máximo. */

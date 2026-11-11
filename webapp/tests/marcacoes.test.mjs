@@ -90,7 +90,11 @@ function montarEquipa(atual) {
     enviarReagendamento: async () => notificacoes.push("reagendamento"),
   };
   return {
-    useCase: new AtualizarAgendamentoEquipaUseCase({ agendamentoRepository: repo, notificationGateway: gw }),
+    useCase: new AtualizarAgendamentoEquipaUseCase({
+      agendamentoRepository: repo,
+      colaboradorRepository: { findById: async (id) => (id === "c2" ? { id, ativo: true } : id === "c3" ? { id, ativo: false } : null) },
+      notificationGateway: gw,
+    }),
     chamadas,
     notificacoes,
   };
@@ -134,4 +138,12 @@ test("cancelar não verifica conflito; reativar verifica", async () => {
   const b = montarEquipa({ ...base(), status: "CANCELADO" });
   await b.useCase.execute({ id: "a1", patch: { status: "CONFIRMADO" } });
   assert.equal(b.chamadas[0][0], "slot");
+});
+
+test("trocar para profissional inexistente ou inativo é recusado; ativo passa", async () => {
+  const { useCase, chamadas } = montarEquipa(base());
+  await assert.rejects(useCase.execute({ id: "a1", patch: { colaboradorId: "nao-existe" } }), RegraNegocioError);
+  await assert.rejects(useCase.execute({ id: "a1", patch: { colaboradorId: "c3" } }), RegraNegocioError);
+  await useCase.execute({ id: "a1", patch: { colaboradorId: "c2" } });
+  assert.equal(chamadas[0][0], "slot");
 });

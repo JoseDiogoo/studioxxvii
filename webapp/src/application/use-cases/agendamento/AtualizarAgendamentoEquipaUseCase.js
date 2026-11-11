@@ -6,8 +6,9 @@ import { DateUtil } from "@/infrastructure/utils/DateUtil";
  * pagamento e observações. Mover ou reativar ocupa uma hora, por isso passa pela verificação de conflito.
  */
 export class AtualizarAgendamentoEquipaUseCase {
-  constructor({ agendamentoRepository, notificationGateway }) {
+  constructor({ agendamentoRepository, colaboradorRepository, notificationGateway }) {
     this.agendamentoRepository = agendamentoRepository;
+    this.colaboradorRepository = colaboradorRepository;
     this.notificationGateway = notificationGateway;
   }
 
@@ -31,6 +32,12 @@ export class AtualizarAgendamentoEquipaUseCase {
 
     if (novoFim <= novoInicio) {
       throw new RegraNegocioError("A hora de fim tem de ser depois da de início.");
+    }
+
+    // Só se pode atribuir a um profissional que existe e está ativo (senão a FK falhava com um 500).
+    if (patch.colaboradorId !== undefined && patch.colaboradorId !== atual.colaboradorId) {
+      const novo = await this.colaboradorRepository.findById(patch.colaboradorId);
+      if (!novo?.ativo) throw new RegraNegocioError("Profissional inválido.");
     }
 
     const dados = {};

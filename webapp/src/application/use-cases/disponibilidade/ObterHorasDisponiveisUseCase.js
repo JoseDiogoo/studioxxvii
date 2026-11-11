@@ -1,3 +1,4 @@
+import { TimezoneUtil } from "@/infrastructure/utils/TimezoneUtil";
 import { CalculadoraDisponibilidadeService } from "@/domain/services/CalculadoraDisponibilidadeService";
 import { RegraNegocioError } from "@/domain/errors/DomainError";
 
@@ -52,11 +53,10 @@ export class ObterHorasDisponiveisUseCase {
       this.agendamentoRepository.findByColaboradoresEData(colaboradorIds, dataObj, dataObj),
     ]);
 
-    const hojeUtc = new Date();
+    // "Hoje" e a hora atual são os de Lisboa (o servidor corre em UTC), como na validação da marcação.
+    const { dataStr: hojeStr, minutos: minutosAgora } = TimezoneUtil.agoraEmPortugal();
     const dataStr = dataObj.toISOString().slice(0, 10);
-    const hojeStr = hojeUtc.toISOString().slice(0, 10);
     const ehHoje = dataStr === hojeStr;
-    const minutosAgora = hojeUtc.getUTCHours() * 60 + hojeUtc.getUTCMinutes();
 
     const slotsValidos = CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({
       servicosPreparados,
