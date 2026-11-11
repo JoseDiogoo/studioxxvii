@@ -91,7 +91,7 @@ export default async function Home() {
         <div className={styles.heroQuadro}>
           <div className={styles.heroFoto}>
             <Image
-              src="/fotos/jorge-estudio-hd.jpg"
+              src="/fotos/jorge-estudio-hd.webp"
               alt="Jorge Fernandes no Studio XXVII"
               fill
               priority

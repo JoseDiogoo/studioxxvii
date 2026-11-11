@@ -25,7 +25,7 @@ const ECRAS = [
   { nome: "tablet", w: 820, h: 1180, mobile: true },
   { nome: "desktop", w: 1440, h: 900, mobile: false },
 ];
-const PAGINAS = ["/", "/marcar", "/equipa/login", "/faq"];
+const PAGINAS = ["/", "/marcar", "/equipa/login", "/faq", "/politica-privacidade", "/termos-condicoes"];
 const temLogin = Boolean(process.env.AUDIT_EMAIL && process.env.AUDIT_PASSWORD);
 if (temLogin) PAGINAS.push("/equipa", "/equipa/historico");
 
@@ -45,6 +45,26 @@ const medir = `(() => {
     const fs = parseFloat(getComputedStyle(e).fontSize);
     if (fs < 12) r.texto.push(Math.round(fs * 10) / 10 + "px " + e.textContent.trim().slice(0, 22));
   });
+  // Contraste WCAG: cor do texto vs. primeiro fundo opaco dos ancestrais (ignora fundos com imagem/gradiente).
+  const lum = (c) => { const v = c.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+  const rgba = (str) => (str.match(/[0-9.]+/g) || []).map(Number);
+  r.contraste = [];
+  document.querySelectorAll("body *").forEach((e) => {
+    if (e.children.length || !e.textContent.trim()) return;
+    const cs = getComputedStyle(e);
+    if (cs.visibility === "hidden" || cs.display === "none" || parseFloat(cs.opacity) === 0) return;
+    const fg = rgba(cs.color); if (fg.length < 3) return;
+    let bg = null, el = e;
+    while (el) { const st = getComputedStyle(el); if (st.backgroundImage !== "none") { bg = "imagem"; break; } const b = rgba(st.backgroundColor); if (b.length >= 3 && (b.length < 4 || b[3] > 0.95)) { bg = b; break; } el = el.parentElement; }
+    if (!bg || bg === "imagem") return;
+    const a = fg.length > 3 ? fg[3] : 1;
+    const mix = fg.slice(0, 3).map((x, i) => Math.round(x * a + bg[i] * (1 - a)));
+    const l1 = lum(mix), l2 = lum(bg.slice(0, 3));
+    const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    const fs = parseFloat(cs.fontSize), grande = fs >= 24 || (fs >= 18.66 && parseInt(cs.fontWeight) >= 700);
+    if (ratio < (grande ? 3 : 4.5)) r.contraste.push(ratio.toFixed(2) + " rgb(" + mix.join(",") + ") em rgb(" + bg.slice(0, 3).join(",") + ') "' + e.textContent.trim().slice(0, 24) + '"');
+  });
+  r.contraste = [...new Set(r.contraste)].slice(0, 15);
   r.pequenos = [...new Set(r.pequenos)].slice(0, 30);
   r.texto = [...new Set(r.texto)].slice(0, 12);
   r.semNome = [...new Set(r.semNome)].slice(0, 10);
@@ -105,7 +125,8 @@ if (temLogin) {
   if (!ok) console.error("Login falhou: a área da equipa não será auditada com sessão.");
 }
 try {
-  for (const e of ECRAS) {
+  const ecrasPedidos = (process.env.AUDIT_ECRAS || "").split(",").filter(Boolean);
+for (const e of ECRAS.filter((x) => !ecrasPedidos.length || ecrasPedidos.includes(x.nome))) {
     await cmd("Emulation.setDeviceMetricsOverride", { width: e.w, height: e.h, deviceScaleFactor: 2, mobile: e.mobile });
     await cmd("Emulation.setTouchEmulationEnabled", { enabled: e.mobile });
     for (const p of PAGINAS) {
@@ -136,5 +157,6 @@ for (const r of relatorio) {
   if (r.pequenos.length) console.log("  alvos <44px:", r.pequenos.join(" | "));
   if (r.texto.length) console.log("  texto <12px:", r.texto.join(" | "));
   if (r.semNome.length) console.log("  sem nome:", r.semNome.join(" | "));
+  if (r.contraste?.length) console.log("  contraste <AA:", r.contraste.join(" | "));
 }
 process.exit(0); // o browser headless pode manter handles abertos
