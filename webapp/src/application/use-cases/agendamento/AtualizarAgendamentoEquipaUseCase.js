@@ -82,6 +82,7 @@ export class AtualizarAgendamentoEquipaUseCase {
     if (!this.notificationGateway || !atualizado.cliente) return;
 
     const base = {
+      email: atualizado.cliente.email || null,
       telefone: atualizado.cliente.telefone,
       nomeCliente: atualizado.cliente.nome,
       servicoTitulo: atualizado.servico?.titulo || "Serviço",

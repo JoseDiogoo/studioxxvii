@@ -7,7 +7,7 @@ import { PostgresColaboradorRepository } from "@/infrastructure/database/reposit
 import { PostgresServicoRepository } from "@/infrastructure/database/repositories/PostgresServicoRepository";
 import { PostgresHorarioRepository } from "@/infrastructure/database/repositories/PostgresHorarioRepository";
 import { PostgresSalaoRepository } from "@/infrastructure/database/repositories/PostgresSalaoRepository";
-import { TwilioWhatsAppGateway } from "@/infrastructure/gateways/TwilioWhatsAppGateway";
+import { EmailNotificationGateway } from "@/infrastructure/gateways/EmailNotificationGateway";
 
 import { CriarAgendamentoPublicoUseCase } from "@/application/use-cases/agendamento/CriarAgendamentoPublicoUseCase";
 
@@ -18,7 +18,7 @@ export class AgendamentoController {
     this.servicoRepo = new PostgresServicoRepository();
     this.horarioRepo = new PostgresHorarioRepository();
     this.salaoRepo = new PostgresSalaoRepository();
-    this.notificationGateway = new TwilioWhatsAppGateway();
+    this.notificationGateway = new EmailNotificationGateway();
 
     this.criarAgendamentoUseCase = new CriarAgendamentoPublicoUseCase({
       agendamentoRepository: this.agendamentoRepo,

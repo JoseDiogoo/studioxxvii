@@ -162,6 +162,7 @@ export class CriarAgendamentoPublicoUseCase {
       const dataStr = typeof data === "string" ? data : data.toISOString().slice(0, 10);
 
       this.notificationGateway.enviarConfirmacao({
+        email: cliente.email || null,
         telefone: cliente.telefone,
         nomeCliente: cliente.nome,
         servicoTitulo: titulos,

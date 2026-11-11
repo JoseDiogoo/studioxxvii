@@ -67,7 +67,7 @@ cd /srv/studioxxvii/app/webapp
 cp .env.example .env
 nano .env   # DATABASE_URL com a password do role studioxxvii criado acima,
             # NEXTAUTH_SECRET (openssl rand -base64 32), NEXTAUTH_URL=https://studioxxvii.pt,
-            # e as chaves de Twilio quando existirem
+            # e RESEND_API_KEY + BARBER_EMAIL para os emails de marcação
 npm install
 npx prisma migrate deploy
 SEED_PASSWORD="uma-password-forte" npm run seed   # só na primeira vez — guarda as passwords geradas
@@ -126,10 +126,10 @@ sudo systemctl restart studioxxvii
 
 ## 8. Integrações externas (opcional)
 
-- **Twilio (WhatsApp)**: preencher `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
-  `TWILIO_WHATSAPP_FROM` no `.env`.
-É opcional e tem fallback automático (ver `.env.example`): sem ela, a app
-continua a funcionar (sem enviar WhatsApp). A equipa vê as marcações na
+- **Email (Resend)**: preencher `RESEND_API_KEY` e `BARBER_EMAIL` no `.env`; com
+  domínio verificado no Resend, definir também `EMAIL_FROM`. Sem domínio, o Resend só
+  entrega ao email da própria conta, por isso os clientes não recebem confirmação.
+Sem estas variáveis a app continua a funcionar (sem enviar emails). A equipa vê as marcações na
 tabela/agenda em `/equipa`. Não há pagamento antecipado — o cliente paga sempre na barbearia,
 depois do corte.
 
