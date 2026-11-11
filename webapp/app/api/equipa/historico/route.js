@@ -16,7 +16,6 @@ export async function GET(req) {
   const ate = dataValida(searchParams.get("ate")) ? searchParams.get("ate") : null;
   const colaboradorId = searchParams.get("colaboradorId")?.slice(0, 40) || null;
   const servicoId = searchParams.get("servicoId")?.slice(0, 40) || null;
-  const pago = searchParams.get("pago");
   const q = searchParams.get("q")?.trim().slice(0, 100);
   const page = Math.min(1000, Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "30", 10) || 30));
@@ -26,9 +25,6 @@ export async function GET(req) {
     ...(ate ? { data: { ...(de ? { gte: new Date(`${de}T00:00:00`) } : {}), lte: new Date(`${ate}T23:59:59`) } } : {}),
     ...(colaboradorId ? { colaboradorId } : {}),
     ...(servicoId ? { servicoId } : {}),
-    ...(pago === "true" ? { pago: true } : {}),
-    // "Por pagar" não inclui as canceladas (não há nada a cobrar).
-    ...(pago === "false" ? { pago: false, status: { not: "CANCELADO" } } : {}),
     ...(q ? { cliente: { nome: { contains: q, mode: "insensitive" } } } : {}),
   };
 
@@ -37,7 +33,9 @@ export async function GET(req) {
       postgresDb.agendamento.count({ where }),
       postgresDb.agendamento.findMany({
         where,
-        include: {
+        // Só o que a equipa precisa de ver: quem marcou, que serviço, que dia e a que horas.
+        select: {
+          id: true, data: true, horaInicio: true, horaFim: true, status: true, observacoes: true,
           cliente: { select: { nome: true, telefone: true } },
           servico: { select: { titulo: true } },
           colaborador: { select: { nome: true } },
@@ -50,7 +48,7 @@ export async function GET(req) {
 
     return NextResponse.json({
       total, page, pageSize,
-      agendamentos: agendamentos.map((a) => ({ ...a, valor: Number(a.valor) })),
+      agendamentos,
     });
   } catch (err) {
     return HttpResponse.tratarErro(err);

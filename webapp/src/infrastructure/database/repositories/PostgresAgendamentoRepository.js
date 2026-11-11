@@ -33,8 +33,6 @@ export class PostgresAgendamentoRepository extends IAgendamentoRepository {
       horaInicio: item.horaInicio,
       horaFim: item.horaFim,
       valor: item.valor,
-      pago: item.pago,
-      metodoPagamento: item.metodoPagamento,
       observacoes: item.observacoes,
       status: item.status,
       createdAt: item.createdAt,

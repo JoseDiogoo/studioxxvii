@@ -69,7 +69,7 @@ Orquestra o fluxo de dados entre o Domínio e os mecanismos de entrega/infraestr
 - **Use Cases (`application/use-cases/`)**:
   - **Agendamento**:
     - `CriarAgendamentoPublicoUseCase`: Orquestra a verificação de disponibilidade, criação do cliente (um cliente existente nunca é alterado), criação transacional do agendamento e notificação por WhatsApp.
-    - `AtualizarAgendamentoEquipaUseCase`: Mover, trocar de profissional, cancelar/reativar, registar pagamento e observações; mover/reativar verifica conflitos com bloqueio e notifica o cliente.
+    - `AtualizarAgendamentoEquipaUseCase`: Mover, trocar de profissional, cancelar/reativar e observações; mover/reativar verifica conflitos com bloqueio e notifica o cliente.
   - **Disponibilidade**:
     - `ObterDiasDisponiveisUseCase`: Dias com horários livres para os serviços escolhidos.
     - `ObterHorasDisponiveisUseCase`: Slots horários livres num dia específico.

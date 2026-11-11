@@ -12,8 +12,6 @@ export class Agendamento {
     horaInicio,
     horaFim,
     valor,
-    pago = false,
-    metodoPagamento = null,
     observacoes = null,
     status = StatusAgendamento.CONFIRMADO,
     createdAt = new Date(),
@@ -31,8 +29,6 @@ export class Agendamento {
     this.horaInicio = horaInicio;
     this.horaFim = horaFim;
     this.valor = Number(valor);
-    this.pago = Boolean(pago);
-    this.metodoPagamento = metodoPagamento;
     this.observacoes = observacoes;
     this.status = status;
     this.createdAt = createdAt;
@@ -54,12 +50,6 @@ export class Agendamento {
 
   isCancelado() {
     return this.status === StatusAgendamento.CANCELADO;
-  }
-
-  marcarComoPago(metodo) {
-    this.pago = true;
-    this.metodoPagamento = metodo;
-    this.updatedAt = new Date();
   }
 
   reagendar({ novaData, novaHoraInicio, novaHoraFim, novoColaboradorId }) {

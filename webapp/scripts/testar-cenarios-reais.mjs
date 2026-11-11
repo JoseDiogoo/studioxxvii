@@ -1,4 +1,4 @@
-// Teste de ponta a ponta com a BD PostgreSQL real: clientes em /marcar e gestão em /equipa.
+// Teste de ponta a ponta com a BD PostgreSQL real: clientes em /marcar e agenda/histórico em /equipa.
 // Uso (servidor a correr, ex. npm run dev):
 //   node --env-file=.env scripts/testar-cenarios-reais.mjs [baseUrl] [--manter]
 //   (ou: npm run test:e2e)
@@ -108,8 +108,6 @@ async function limpar() {
   return { clientes: clientes.count, barbeiros: colabs.count };
 }
 
-const dinheiro = (n) => `${Number(n).toFixed(2)} €`;
-
 // ---------- cenários ----------
 async function main() {
   const saude = await api("/api/health").catch(() => ({ status: 0 }));
@@ -136,7 +134,7 @@ async function main() {
   // A — marcação simples
   const A = await marcar({ nome: "Cliente A Teste", telefone: TEL("01") }, [{ servicoId: corte.id, colaboradorId: b1.id }], quinta, "10:00", "10.77.1.1");
   ok("1", "Cliente A: marcação simples confirmada", A.status === 200 && A.json?.grupoId, `HTTP ${A.status}`);
-  ok("1", "Cliente A: total correto", Number(A.json?.total) === Number(corte.preco), `total ${A.json?.total} (esperado ${Number(corte.preco)})`);
+  ok("1", "Cliente A: total da confirmação correto", Number(A.json?.total) === Number(corte.preco), `total ${A.json?.total} (esperado ${Number(corte.preco)})`);
   const agA = await db.agendamento.findFirst({ where: { cliente: { telefone: TEL("01") } } });
   ok("1", "Cliente A: gravado com o Barbeiro 1 às 10:00-10:30", agA && agA.colaboradorId === b1.id && agA.horaInicio === "10:00" && agA.horaFim === "10:30", agA ? `${agA.horaInicio}-${agA.horaFim}` : "não gravou");
 
@@ -211,18 +209,6 @@ async function main() {
   const R5 = await api(`/api/equipa/agendamentos/${idA}`, { metodo: "PATCH", cookie, corpo: { colaboradorId: linhaB0.colaboradorId, horaInicio: linhaB0.horaInicio, horaFim: somarMin(linhaB0.horaInicio, 30) } });
   ok("2", "Arrastar A para cima de outra marcação do mesmo barbeiro é recusado (409)", R5.status === 409, `HTTP ${R5.status}`);
 
-  // Pagamentos
-  const P1 = await api(`/api/equipa/agendamentos/${idA}`, { metodo: "PATCH", cookie, corpo: { pago: true, metodoPagamento: "MBWAY" } });
-  const idsB = linhasB.map((l) => l.id);
-  const PB = [];
-  for (const id of idsB) PB.push(await api(`/api/equipa/agendamentos/${id}`, { metodo: "PATCH", cookie, corpo: { pago: true, metodoPagamento: "DINHEIRO" } }));
-  const pA = await db.agendamento.findUnique({ where: { id: idA } });
-  const pB = await db.agendamento.findMany({ where: { id: { in: idsB } } });
-  ok("2", "Cliente A pago via MBWAY persiste na BD", P1.status === 200 && pA.pago === true && pA.metodoPagamento === "MBWAY");
-  ok("2", "Cliente B (2 linhas) pago via DINHEIRO persiste na BD", PB.every((x) => x.status === 200) && pB.every((x) => x.pago && x.metodoPagamento === "DINHEIRO"), pB.length + " linhas");
-  const PX = await api(`/api/equipa/agendamentos/${idA}`, { metodo: "PATCH", cookie, corpo: { pago: true, metodoPagamento: "BITCOIN" } });
-  ok("2", "Método de pagamento inválido é recusado (400)", PX.status === 400, `HTTP ${PX.status}`);
-
   // Cancelamento de D e libertação do horário
   const idD = agD.id;
   const horasAntes = await api("/api/disponibilidade/horas", { metodo: "POST", ip: "10.77.6.1", corpo: { servicos: [{ servicoId: corte.id, colaboradorId: b1.id }], data: sexta } });
@@ -240,36 +226,19 @@ async function main() {
   const pendDepois = await db.agendamento.count({ where: { cliente: { telefone: TEL("04") }, status: "CONFIRMADO" } });
   ok("2", "Cancelada deixa de contar como pendente do cliente D", pendDepois === 0);
 
-  // Estatísticas / histórico
-  const est = await api("/api/equipa/estatisticas", { cookie });
-  if (est.status === 404) {
-    aviso("O endpoint /api/equipa/estatisticas NÃO existe (foi removido na simplificação para só agenda + histórico). As métricas abaixo são calculadas a partir da BD e do histórico.");
-  } else {
-    ok("2", "Endpoint de estatísticas responde", est.status === 200, `HTTP ${est.status}`);
-  }
-  const todas = await db.agendamento.findMany({ where: { cliente: { telefone: { startsWith: "+3519009910" } } }, include: { cliente: true, servico: true } });
-  const validas = todas.filter((x) => x.status !== "CANCELADO");
-  const receita = validas.filter((x) => x.pago).reduce((s, x) => s + Number(x.valor), 0);
-  const pendente = validas.filter((x) => !x.pago).reduce((s, x) => s + Number(x.valor), 0);
-  const marcacoesPagas = new Set(validas.filter((x) => x.pago).map((x) => x.grupoId)).size;
-  const ticket = marcacoesPagas ? receita / marcacoesPagas : 0;
-  const esperadoReceita = Number(corte.preco) + esperadoB; // A + B
-  ok("2", "Receita total = A (MBWAY) + B (DINHEIRO)", Math.abs(receita - esperadoReceita) < 0.005, `${dinheiro(receita)} (esperado ${dinheiro(esperadoReceita)})`);
-  ok("2", "Faturação pendente = só o Cliente E (D cancelado não conta)", Math.abs(pendente - Number(corte.preco)) < 0.005, `${dinheiro(pendente)} (esperado ${dinheiro(Number(corte.preco))})`);
-  ok("2", "Ticket médio por marcação paga", Math.abs(ticket - esperadoReceita / 2) < 0.005, `${dinheiro(ticket)} (${marcacoesPagas} marcações pagas)`);
-
+  // Histórico (só agendamentos: quem, que serviço, que dia, que horas)
   const h1 = await api(`/api/equipa/historico?q=${encodeURIComponent("Cliente B")}`, { cookie });
   ok("2", "Histórico: pesquisa por nome 'Cliente B' devolve só o B (2 linhas)", h1.status === 200 && (h1.json?.agendamentos || []).length === 2 && h1.json.agendamentos.every((x) => x.cliente.nome === "Cliente B Teste"), `${(h1.json?.agendamentos || []).length} linhas`);
-  const h2 = await api(`/api/equipa/historico?q=${encodeURIComponent("Teste")}&pago=true&pageSize=100`, { cookie });
-  const pagos = (h2.json?.agendamentos || []).filter((x) => x.cliente.telefone.startsWith("+3519009910"));
-  ok("2", "Histórico: filtro pago=true devolve só as pagas (A + 2 linhas do B)", pagos.length === 3 && pagos.every((x) => x.pago === true), `${pagos.length} linhas`);
-  const somaHistorico = pagos.reduce((s, x) => s + Number(x.valor), 0);
-  ok("2", "Histórico: soma das pagas bate com a receita da BD", Math.abs(somaHistorico - receita) < 0.005, `${dinheiro(somaHistorico)}`);
-  const h3 = await api(`/api/equipa/historico?q=${encodeURIComponent("Teste")}&pago=false&pageSize=100`, { cookie });
-  const naoPagos = (h3.json?.agendamentos || []).filter((x) => x.cliente.telefone.startsWith("+3519009910") && x.status !== "CANCELADO");
-  ok("2", "Histórico: filtro pago=false mostra o Cliente E (e as canceladas à parte)", naoPagos.length === 1 && naoPagos[0].cliente.nome === "Cliente E Teste", naoPagos.map((x) => x.cliente.nome).join(", "));
-  const semFiltroCancel = (h3.json?.agendamentos || []).some((x) => x.status === "CANCELADO");
-  if (semFiltroCancel) aviso("O histórico com pago=false inclui marcações CANCELADAS (D) misturadas com as por pagar: pode confundir a conta do balcão. Sugestão: filtro por estado.");
+  const h2 = await api(`/api/equipa/historico?q=${encodeURIComponent("Teste")}&pageSize=100`, { cookie });
+  const meus = (h2.json?.agendamentos || []).filter((x) => x.cliente.telefone.startsWith("+3519009910"));
+  ok("2", "Histórico: lista as 5 marcações de teste (inclui a cancelada)", meus.length === 5, `${meus.length} linhas`);
+  const linhaA = meus.find((x) => x.cliente.telefone === TEL("01"));
+  ok("2", "Histórico: A com serviço, dia e horas certos (10:30-11:00)", linhaA && linhaA.servico.titulo === "Corte Cabelo" && String(linhaA.data).startsWith(quinta) && linhaA.horaInicio === "10:30" && linhaA.horaFim === "11:00");
+  const chaves = Object.keys(h2.json?.agendamentos?.[0] || {}).concat(Object.keys(ag.json?.agendamentos?.[0] || {}));
+  ok("2", "Sem registo de pagamento em nenhuma resposta (nem 'pago' nem 'metodoPagamento')", !chaves.some((k) => /pago|metodoPagamento/i.test(k)), chaves.length + " campos verificados");
+  const h3 = await api(`/api/equipa/historico?de=${quinta}&ate=${quinta}&pageSize=100`, { cookie });
+  const diaQuinta = (h3.json?.agendamentos || []).filter((x) => x.cliente.telefone.startsWith("+3519009910"));
+  ok("2", "Histórico: filtro por dia (quinta) devolve A e as 2 linhas do B", diaQuinta.length === 3, `${diaQuinta.length} linhas`);
 
   // ======================= RELATÓRIO =======================
   console.log("\n--- ESTADO FINAL DOS DADOS (antes da limpeza) ---");
@@ -280,8 +249,7 @@ async function main() {
   });
   console.table(final.map((x) => ({
     data: x.data.toISOString().slice(0, 10), hora: `${x.horaInicio}-${x.horaFim}`, cliente: x.cliente.nome,
-    servico: x.servico.titulo, barbeiro: x.colaborador.nome, valor: dinheiro(x.valor),
-    pago: x.pago ? x.metodoPagamento : "não", status: x.status, obs: x.observacoes || "",
+    servico: x.servico.titulo, barbeiro: x.colaborador.nome, status: x.status, obs: x.observacoes || "",
   })));
   console.log(`Clientes de teste: ${await db.cliente.count({ where: { telefone: { startsWith: "+3519009910" } } })} | Marcações: ${final.length}`);
 

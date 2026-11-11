@@ -3,8 +3,8 @@ import { DateUtil } from "@/infrastructure/utils/DateUtil";
 import { HorarioSlot } from "@/domain/value-objects/HorarioSlot";
 
 /**
- * Atualização de uma marcação pela equipa: mover, trocar de profissional, cancelar/reativar,
- * pagamento e observações. Mover ou reativar ocupa uma hora, por isso passa pela verificação de conflito.
+ * Atualização de uma marcação pela equipa: mover, trocar de profissional, cancelar/reativar
+ * e observações. Mover ou reativar ocupa uma hora, por isso passa pela verificação de conflito.
  */
 export class AtualizarAgendamentoEquipaUseCase {
   constructor({ agendamentoRepository, colaboradorRepository, notificationGateway }) {
@@ -53,8 +53,6 @@ export class AtualizarAgendamentoEquipaUseCase {
     if (patch.horaInicio !== undefined) dados.horaInicio = patch.horaInicio;
     if (patch.horaFim !== undefined || novoFim !== atual.horaFim) dados.horaFim = novoFim;
     if (patch.colaboradorId !== undefined) dados.colaboradorId = patch.colaboradorId;
-    if (patch.pago !== undefined) dados.pago = patch.pago;
-    if (patch.metodoPagamento !== undefined) dados.metodoPagamento = patch.metodoPagamento;
     if (patch.status !== undefined) dados.status = patch.status;
     if (patch.observacoes !== undefined) dados.observacoes = patch.observacoes;
 

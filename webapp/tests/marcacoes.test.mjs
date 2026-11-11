@@ -122,9 +122,9 @@ test("mudar a hora passa pela verificação de conflito e avisa o cliente", asyn
   assert.deepEqual(notificacoes, ["reagendamento"]);
 });
 
-test("só pagamento não verifica conflito", async () => {
+test("só observações não verifica conflito nem avisa o cliente", async () => {
   const { useCase, chamadas, notificacoes } = montarEquipa(base());
-  await useCase.execute({ id: "a1", patch: { pago: true, metodoPagamento: "MBWAY" } });
+  await useCase.execute({ id: "a1", patch: { observacoes: "Trazer foto de referência" } });
   assert.equal(chamadas[0][0], "update");
   assert.deepEqual(notificacoes, []);
 });

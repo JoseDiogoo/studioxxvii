@@ -85,14 +85,6 @@ model Cliente {
   @@unique([salaoId, telefone])
 }
 
-enum MetodoPagamento {
-  DINHEIRO
-  MULTIBANCO
-  MBWAY
-  CARTAO
-  OUTRO
-}
-
 enum StatusAgendamento {
   CONFIRMADO
   CANCELADO
@@ -112,8 +104,6 @@ model Agendamento {
   horaInicio      String
   horaFim         String
   valor           Decimal  @db.Decimal(10, 2)
-  pago            Boolean  @default(false)
-  metodoPagamento MetodoPagamento?
   observacoes     String?
   status          StatusAgendamento @default(CONFIRMADO)
   createdAt       DateTime @default(now())

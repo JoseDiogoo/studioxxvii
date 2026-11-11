@@ -46,8 +46,6 @@ export const moverAgendamentoSchema = z.object({
   horaInicio: hhmm.optional(),
   horaFim: hhmm.optional(),
   colaboradorId: z.string().min(1).optional(),
-  pago: z.boolean().optional(),
-  metodoPagamento: z.enum(["DINHEIRO", "MULTIBANCO", "MBWAY", "CARTAO", "OUTRO"]).nullable().optional(),
   status: z.enum(["CONFIRMADO", "CANCELADO", "CONCLUIDO"]).optional(),
   observacoes: z.string().trim().max(500).nullable().optional(),
 }).refine((v) => !(v.horaInicio && v.horaFim) || v.horaFim > v.horaInicio, "A hora de fim tem de ser depois da de início.");
