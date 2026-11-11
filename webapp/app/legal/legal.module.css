@@ -170,3 +170,11 @@
 .indice a:hover {
   color: var(--dourado-escuro);
 }
+
+/* ---------- Acessibilidade: alvos de toque >= 44px ---------- */
+.marca,
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

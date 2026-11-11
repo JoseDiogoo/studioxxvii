@@ -157,7 +157,7 @@
 
 .kicker {
   display: block;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -590,7 +590,7 @@
     flex: 1 1 0;
     padding: 0 12px;
     min-height: 50px;
-    font-size: 0.74rem;
+    font-size: 0.75rem;
     letter-spacing: 0.12em;
   }
 
@@ -610,4 +610,19 @@
     overflow-x: auto;
     width: auto;
   }
+}
+
+/* ---------- Acessibilidade: alvos de toque >= 44px ---------- */
+.marca,
+.nav a,
+.footerLinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.botaoOuro,
+.mobileMenuBotao {
+  min-height: 44px;
+  min-width: 44px;
 }

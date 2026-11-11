@@ -42,3 +42,9 @@ html {
   color-scheme: light;
   scroll-behavior: smooth;
 }
+
+/* Foco visível para quem usa teclado (WCAG 2.4.7). Os campos de texto já mudam a cor da borda ao receber foco. */
+:focus-visible {
+  outline: 2px solid var(--dourado);
+  outline-offset: 2px;
+}
