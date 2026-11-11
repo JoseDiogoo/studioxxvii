@@ -314,7 +314,7 @@ export default function MarcarPage() {
 function PassoServicos({ servicos, servicoId, escolherServico }) {
   return (
     <section>
-      <h1 className={styles.tituloPasso}>Que corte queres?</h1>
+      <h1 className={styles.tituloPasso}>Os nossos serviços</h1>
       <div className={styles.lista}>
         {servicos.map((s) => (
           <button
