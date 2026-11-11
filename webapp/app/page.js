@@ -15,6 +15,7 @@ const SERVICOS_FALLBACK = [
   { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 40 },
   { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 45 },
   { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 55 },
+  { titulo: "Só Barba", preco: 10, duracaoMinutos: 30 },
   { titulo: "Black Mask", preco: 10, duracaoMinutos: 20 },
   { titulo: "Pack 27", preco: 30, duracaoMinutos: 75 },
 ];
