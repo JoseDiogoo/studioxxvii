@@ -27,7 +27,8 @@ export async function GET(req) {
     ...(colaboradorId ? { colaboradorId } : {}),
     ...(servicoId ? { servicoId } : {}),
     ...(pago === "true" ? { pago: true } : {}),
-    ...(pago === "false" ? { pago: false } : {}),
+    // "Por pagar" não inclui as canceladas (não há nada a cobrar).
+    ...(pago === "false" ? { pago: false, status: { not: "CANCELADO" } } : {}),
     ...(q ? { cliente: { nome: { contains: q, mode: "insensitive" } } } : {}),
   };
 

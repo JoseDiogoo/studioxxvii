@@ -147,3 +147,12 @@ test("trocar para profissional inexistente ou inativo é recusado; ativo passa",
   await useCase.execute({ id: "a1", patch: { colaboradorId: "c2" } });
   assert.equal(chamadas[0][0], "slot");
 });
+
+test("mover só a hora de início mantém a duração (fim recalculado)", async () => {
+  const { useCase, chamadas } = montarEquipa(base()); // 10:00-10:30
+  await useCase.execute({ id: "a1", patch: { horaInicio: "11:00" } });
+  assert.equal(chamadas[0][0], "slot");
+  assert.equal(chamadas[0][1].horaFim, "11:30");
+  assert.equal(chamadas[0][2].horaFim, "11:30");
+  await assert.rejects(useCase.execute({ id: "a1", patch: { horaInicio: "23:45" } }), RegraNegocioError);
+});

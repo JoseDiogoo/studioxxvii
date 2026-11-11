@@ -11,6 +11,7 @@
     "lint": "next lint",
     "seed": "node prisma/seed.cjs",
     "test": "node --import ./tests/register.mjs --test tests/*.test.mjs",
+    "test:e2e": "node --env-file=.env scripts/testar-cenarios-reais.mjs",
     "test:db": "node --env-file=.env --import ./tests/register.mjs --test tests/concorrencia.dbtest.mjs"
   },
   "prisma": {

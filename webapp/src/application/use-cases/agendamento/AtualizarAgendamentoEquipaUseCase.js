@@ -1,5 +1,6 @@
 import { EntidadeNaoEncontradaError, RegraNegocioError } from "@/domain/errors/DomainError";
 import { DateUtil } from "@/infrastructure/utils/DateUtil";
+import { HorarioSlot } from "@/domain/value-objects/HorarioSlot";
 
 /**
  * Atualização de uma marcação pela equipa: mover, trocar de profissional, cancelar/reativar,
@@ -18,7 +19,14 @@ export class AtualizarAgendamentoEquipaUseCase {
 
     const novaData = patch.data ? new Date(patch.data) : atual.data;
     const novoInicio = patch.horaInicio ?? atual.horaInicio;
-    const novoFim = patch.horaFim ?? atual.horaFim;
+    // Mover só a hora de início (arrastar) mantém a duração: o fim é recalculado.
+    let novoFim = patch.horaFim ?? atual.horaFim;
+    if (patch.horaInicio !== undefined && patch.horaFim === undefined) {
+      const duracao = HorarioSlot.timeToMinutes(atual.horaFim) - HorarioSlot.timeToMinutes(atual.horaInicio);
+      const fimMin = HorarioSlot.timeToMinutes(patch.horaInicio) + duracao;
+      if (fimMin >= 24 * 60) throw new RegraNegocioError("A marcação passaria da meia-noite.");
+      novoFim = HorarioSlot.minutesToTime(fimMin);
+    }
     const novoColaboradorId = patch.colaboradorId ?? atual.colaboradorId;
 
     const mudouHorarioOuColaborador =
@@ -43,7 +51,7 @@ export class AtualizarAgendamentoEquipaUseCase {
     const dados = {};
     if (patch.data !== undefined) dados.data = novaData;
     if (patch.horaInicio !== undefined) dados.horaInicio = patch.horaInicio;
-    if (patch.horaFim !== undefined) dados.horaFim = patch.horaFim;
+    if (patch.horaFim !== undefined || novoFim !== atual.horaFim) dados.horaFim = novoFim;
     if (patch.colaboradorId !== undefined) dados.colaboradorId = patch.colaboradorId;
     if (patch.pago !== undefined) dados.pago = patch.pago;
     if (patch.metodoPagamento !== undefined) dados.metodoPagamento = patch.metodoPagamento;
