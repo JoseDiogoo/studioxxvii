@@ -1,12 +1,13 @@
 import Link from "next/link";
 import styles from "./home.module.css";
 
-// Só o que a lei exige ao cliente: Livro de Reclamações Eletrónico (DL 156/2005) e informação RGPD (política de privacidade).
+// Só o que a lei exige ao cliente: Livro de Reclamações Eletrónico (DL 156/2005), informação RGPD (política de privacidade) e os termos de utilização.
 export default function SiteFooter() {
   return (
     <footer className={styles.footer}>
       <div className={styles.footerLinks}>
         <a href="https://www.instagram.com/studio__xxvii/" target="_blank" rel="noreferrer">Instagram</a>
+        <Link href="/termos-condicoes">Termos e Condições</Link>
         <Link href="/politica-privacidade">Política de Privacidade</Link>
         <a href="https://www.livroreclamacoes.pt/Inicio/" target="_blank" rel="noreferrer">Livro de Reclamações</a>
       </div>

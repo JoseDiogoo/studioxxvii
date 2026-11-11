@@ -142,7 +142,7 @@ export default async function Home() {
               <div className={styles.faixaGrupo} key={copia} aria-hidden={copia > 0 ? "true" : undefined}>
                 {fotos.map((src) => (
                   <div className={styles.faixaItem} key={src}>
-                    <Image src={src} alt="" fill quality={90} sizes="(max-width: 700px) 280px, 420px" />
+                    <Image src={src} alt={copia === 0 ? "Trabalho do Studio XXVII" : ""} fill quality={90} sizes="(max-width: 700px) 280px, 420px" />
                   </div>
                 ))}
               </div>
