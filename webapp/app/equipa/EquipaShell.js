@@ -4,56 +4,37 @@ import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./equipa.module.css";
-import LogoBadge from "../LogoBadge";
 
-const NAV = [
-  { href: "/equipa", label: "Calendário", icon: "📅", match: (p) => p === "/equipa" },
-  { href: "/equipa/dashboard", label: "Dashboard", icon: "📊", match: (p) => p.startsWith("/equipa/dashboard") },
-  { href: "/equipa/historico", label: "Histórico", icon: "🕘", match: (p) => p.startsWith("/equipa/historico") },
-  { href: "/equipa/definicoes", label: "Definições", icon: "⚙️", match: (p) => p.startsWith("/equipa/definicoes") },
+const TABS = [
+  { href: "/equipa", label: "Agenda", ativo: (p) => p === "/equipa" },
+  { href: "/equipa/historico", label: "Histórico", ativo: (p) => p.startsWith("/equipa/historico") },
 ];
 
-export default function EquipaShell({ children, largura }) {
+export default function EquipaShell({ children, largo = false }) {
   const { data: session } = useSession();
   const pathname = usePathname();
 
   return (
-    <div className={styles.shellDash}>
-      <aside className={styles.sidebar}>
-        <Link href="/equipa" className={styles.sidebarMarca}>
-          <LogoBadge size={36} />
-          <span className={styles.sidebarMarcaTexto}>STUDIO XXVII</span>
-        </Link>
-
-        <nav className={styles.sidebarNav}>
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.navItem} ${item.match(pathname) ? styles.navItemAtivo : ""}`}
-            >
-              <span className={styles.navIcon}>{item.icon}</span>
-              {item.label}
+    <div className={`${styles.pagina} ${largo ? styles.paginaLarga : ""}`}>
+      <header className={styles.topo}>
+        <div className={styles.topoLinha}>
+          <Link href="/equipa" className={styles.marca}>STUDIO <em>XXVII</em></Link>
+          <div className={styles.utilizador}>
+            <span>{session?.user?.name}</span>
+            <button className={styles.sair} onClick={() => signOut({ callbackUrl: "/equipa/login" })}>
+              Sair
+            </button>
+          </div>
+        </div>
+        <nav className={styles.tabs} aria-label="Área da equipa">
+          {TABS.map((t) => (
+            <Link key={t.href} href={t.href} className={`${styles.tab} ${t.ativo(pathname) ? styles.tabAtiva : ""}`}>
+              {t.label}
             </Link>
           ))}
         </nav>
-
-        <div className={styles.sidebarRodape}>
-          <div className={styles.sidebarUtilizador}>
-            <span className={styles.sidebarUtilizadorAvatar}>
-              {session?.user?.name?.charAt(0)?.toUpperCase() || "?"}
-            </span>
-            <span className={styles.sidebarUtilizadorNome}>{session?.user?.name}</span>
-          </div>
-          <button className={styles.sair} onClick={() => signOut({ callbackUrl: "/equipa/login" })}>
-            Sair
-          </button>
-        </div>
-      </aside>
-
-      <main className={styles.main} style={largura ? { maxWidth: largura } : undefined}>
-        {children}
-      </main>
+      </header>
+      <main className={`${styles.conteudo} ${largo ? styles.conteudoLargo : ""}`}>{children}</main>
     </div>
   );
 }

@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { DomainError, SlotIndisponivelError, EntidadeNaoEncontradaError } from "@/domain/errors/DomainError";
 
 export class HttpResponse {
+  /** Lê o corpo JSON com limite de tamanho (20 KB chega para qualquer formulário). Devolve null se for inválido ou grande demais. */
+  static async lerJson(req, maxBytes = 20_000) {
+    const declarado = Number(req.headers.get("content-length") || 0);
+    if (declarado > maxBytes) return null;
+    try {
+      const texto = await req.text();
+      if (texto.length > maxBytes) return null;
+      return JSON.parse(texto);
+    } catch {
+      return null;
+    }
+  }
+
   static ok(data, init) {
     return NextResponse.json(data, { status: 200, ...init });
   }
@@ -50,6 +63,7 @@ export class HttpResponse {
     if (err instanceof DomainError) {
       return this.badRequest(err.message);
     }
-    return this.serverError(err?.message || "Erro inesperado.");
+    // Erros inesperados ficam só no log do servidor: a mensagem interna não deve chegar ao cliente.
+    return this.serverError();
   }
 }

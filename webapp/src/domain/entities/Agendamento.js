@@ -16,7 +16,6 @@ export class Agendamento {
     metodoPagamento = null,
     observacoes = null,
     status = StatusAgendamento.CONFIRMADO,
-    googleEventId = null,
     createdAt = new Date(),
     updatedAt = new Date(),
     cliente = null,
@@ -36,7 +35,6 @@ export class Agendamento {
     this.metodoPagamento = metodoPagamento;
     this.observacoes = observacoes;
     this.status = status;
-    this.googleEventId = googleEventId;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
 

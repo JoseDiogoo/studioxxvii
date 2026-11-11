@@ -5,7 +5,6 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import styles from "../equipa.module.css";
-import LogoBadge from "../../LogoBadge";
 
 function LoginForm() {
   const router = useRouter();
@@ -19,11 +18,7 @@ function LoginForm() {
     e.preventDefault();
     setErro("");
     setLoading(true);
-    const res = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+    const res = await signIn("credentials", { redirect: false, email, password });
     setLoading(false);
     if (res?.error) {
       setErro("Email ou password incorretos, ou demasiadas tentativas. Tenta novamente.");
@@ -36,11 +31,9 @@ function LoginForm() {
     <div className={styles.loginPagina}>
       <Link href="/" className={styles.loginVoltar}>← Voltar ao site</Link>
       <form className={styles.loginCartao} onSubmit={onSubmit}>
-        <div className={styles.loginBadge}>
-          <LogoBadge size={64} />
-        </div>
-        <div className={styles.loginTitulo}>Studio XXVII — Admin</div>
-        {erro && <div className={styles.erro}>{erro}</div>}
+        <div className={styles.loginTitulo}>STUDIO <em>XXVII</em></div>
+        <div className={styles.loginSub}>Área da equipa</div>
+        {erro && <div className={styles.erro} role="alert">{erro}</div>}
         <div className={styles.campo}>
           <label htmlFor="login-email">Email</label>
           <input id="login-email" name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -7,8 +7,9 @@ Guia para pôr a `webapp/` a correr num servidor real, com disco persistente
 
 Um plano de webhosting partilhado (tipo o Hetzner Webhosting S a ~2€/mês) **não
 serve** — só tem PHP, sem Node.js nem SSH nos planos mais baratos. É preciso uma
-VPS com acesso root, por exemplo **Hetzner Cloud CX22** (2 vCPU / 4GB RAM / 40GB
-NVMe, Ubuntu 22.04/24.04).
+VPS com acesso root, por exemplo um **Hetzner Cloud CX23** (2 vCPU / 4GB RAM / 40GB
+NVMe, Ubuntu 22.04/24.04). Os preços e a disponibilidade mudaram em 2026:
+confirma na página da Hetzner antes de escolher o plano.
 
 ```bash
 # como root, na VPS nova
@@ -66,10 +67,10 @@ cd /srv/studioxxvii/app/webapp
 cp .env.example .env
 nano .env   # DATABASE_URL com a password do role studioxxvii criado acima,
             # NEXTAUTH_SECRET (openssl rand -base64 32), NEXTAUTH_URL=https://studioxxvii.pt,
-            # e as chaves de Twilio/Google quando existirem
+            # e as chaves de Twilio quando existirem
 npm install
 npx prisma migrate deploy
-npm run seed   # só na primeira vez — guarda as passwords geradas
+SEED_PASSWORD="uma-password-forte" npm run seed   # só na primeira vez — guarda as passwords geradas
 npm run build
 exit
 ```
@@ -104,21 +105,14 @@ site duplicado em dois domínios aos olhos do Google.
 
 ## 6. Backups do PostgreSQL
 
-```bash
-sudo -u studioxxvii crontab -e
-```
+Usa só o `deploy/backup.sh` (dump diário comprimido, guarda 14 dias em
+`/var/backups/studioxxvii`). Instruções de instalação e restauro no topo do
+ficheiro.
 
-Adicionar (backup diário às 4h, guarda 14 dias):
-
-```
-0 4 * * * PGPASSWORD='<password-do-role>' pg_dump -U studioxxvii -h localhost studioxxvii > /srv/studioxxvii/backups/studioxxvii-$(date +\%F).sql
-0 5 * * * find /srv/studioxxvii/backups -name 'studioxxvii-*.sql' -mtime +14 -delete
-```
-
-Idealmente copiar também esses ficheiros para fora da VPS (ex. Hetzner Storage
-Box, rclone para um bucket S3-compatível) — uma cópia só na mesma máquina não
-protege contra a perda do disco todo. Para restaurar: `psql -U studioxxvii -h
-localhost studioxxvii < ficheiro.sql`.
+Uma cópia só na mesma máquina não protege contra a perda do disco. Para enviar
+também para fora da VPS, configura um remote com `rclone config` (ex. Hetzner
+Storage Box ou um bucket S3) e define `BACKUP_REMOTE` no cron, por exemplo
+`BACKUP_REMOTE=storagebox:studioxxvii`. Testa um restauro de vez em quando.
 
 ## 7. Atualizar depois de alterações no código
 
@@ -130,18 +124,24 @@ exit
 sudo systemctl restart studioxxvii
 ```
 
-## 8. Integrações externas (configurar quando houver contas/credenciais)
+## 8. Integrações externas (opcional)
 
 - **Twilio (WhatsApp)**: preencher `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
   `TWILIO_WHATSAPP_FROM` no `.env`.
-- **Google Calendar**: criar credenciais OAuth em
-  console.cloud.google.com/apis/credentials, com
-  `https://studioxxvii.pt/api/equipa/google/callback` como redirect URI
-  autorizado. Preencher `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-  `GOOGLE_REDIRECT_URI` no `.env`. Cada colaborador liga a própria conta em
-  `/equipa/definicoes`.
-
-Ambas são opcionais e têm fallback automático (ver `.env.example`): sem elas,
-a app continua a funcionar (sem enviar WhatsApp, sem sincronizar Google
-Calendar). Não há pagamento antecipado — o cliente paga sempre na barbearia,
+É opcional e tem fallback automático (ver `.env.example`): sem ela, a app
+continua a funcionar (sem enviar WhatsApp). A equipa vê as marcações na
+tabela/agenda em `/equipa`. Não há pagamento antecipado — o cliente paga sempre na barbearia,
 depois do corte.
+
+## Segurança (checklist antes de publicar)
+
+1. **Segredo da sessão:** `NEXTAUTH_SECRET` com 32+ caracteres (`openssl rand -base64 32`). A app recusa arrancar em produção com um segredo fraco.
+2. **Password do barbeiro:** não existe password por omissão. Corre `SEED_PASSWORD="uma-password-forte" npm run seed` ou, depois, `node scripts/reset-password.cjs <email> "<password>"`.
+3. **nginx:** usa o `deploy/nginx.conf` tal como está. A app depende de `X-Real-IP` e de `X-Forwarded-For $remote_addr` para os limites de pedidos; sem nginx todos os pedidos partilham o mesmo limite. Depois do certbot, confirma que o HTTPS está ativo (o cabeçalho HSTS só é enviado em produção).
+4. **Firewall:** só portas 22, 80 e 443 (`ufw`). A porta 5432 (PostgreSQL) nunca aberta ao exterior; usa túnel SSH.
+5. **SSH:** só por chave (`PasswordAuthentication no` em `/etc/ssh/sshd_config`) e `apt install fail2ban`.
+6. **Atualizações automáticas:** `apt install unattended-upgrades`. Na app, corre `npm audit` de vez em quando.
+7. **Cópias de segurança:** instala o `deploy/backup.sh` (instruções no topo do ficheiro) e testa uma restauração.
+8. **Logs:** tentativas de login falhadas e bloqueios aparecem como `[seguranca]` em `journalctl -u studioxxvii`.
+
+9. **Monitorização:** `GET /api/health` responde 200 se a BD está ligada (503 se não). Aponta um serviço de uptime gratuito (ex. UptimeRobot) para `https://studioxxvii.pt/api/health`.

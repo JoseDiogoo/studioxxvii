@@ -15,7 +15,7 @@ export class PostgresServicoRepository extends IServicoRepository {
       salaoId: item.salaoId,
       titulo: item.titulo,
       descricao: item.descricao,
-      preco: item.preco,
+      preco: Number(item.preco),
       duracaoMinutos: item.duracaoMinutos,
       ativo: item.ativo,
       createdAt: item.createdAt,

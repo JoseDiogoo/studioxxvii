@@ -1,5 +1,12 @@
-import { Playfair_Display, Inter } from "next/font/google";
+import { Playfair_Display, Inter, Bebas_Neue } from "next/font/google";
 import "./globals.css";
+
+// Títulos do site público: condensada, fina e em maiúsculas (home e marcação).
+const bebas = Bebas_Neue({
+  variable: "--font-titulo",
+  subsets: ["latin"],
+  weight: "400",
+});
 
 const playfair = Playfair_Display({
   variable: "--font-display",
@@ -43,7 +50,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt">
-      <body className={`${playfair.variable} ${inter.variable}`}>
+      <body className={`${playfair.variable} ${inter.variable} ${bebas.variable}`}>
         {children}
       </body>
     </html>

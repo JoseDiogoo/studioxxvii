@@ -11,13 +11,14 @@ export async function GET(req) {
   }
 
   const { searchParams } = req.nextUrl;
-  const de = searchParams.get("de");
-  const ate = searchParams.get("ate");
-  const colaboradorId = searchParams.get("colaboradorId");
-  const servicoId = searchParams.get("servicoId");
+  const dataValida = (v) => v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime());
+  const de = dataValida(searchParams.get("de")) ? searchParams.get("de") : null;
+  const ate = dataValida(searchParams.get("ate")) ? searchParams.get("ate") : null;
+  const colaboradorId = searchParams.get("colaboradorId")?.slice(0, 40) || null;
+  const servicoId = searchParams.get("servicoId")?.slice(0, 40) || null;
   const pago = searchParams.get("pago");
-  const q = searchParams.get("q")?.trim();
-  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const q = searchParams.get("q")?.trim().slice(0, 100);
+  const page = Math.min(1000, Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1));
   const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") || "30", 10) || 30));
 
   const where = {
@@ -46,7 +47,10 @@ export async function GET(req) {
       }),
     ]);
 
-    return NextResponse.json({ total, page, pageSize, agendamentos });
+    return NextResponse.json({
+      total, page, pageSize,
+      agendamentos: agendamentos.map((a) => ({ ...a, valor: Number(a.valor) })),
+    });
   } catch (err) {
     return HttpResponse.tratarErro(err);
   }

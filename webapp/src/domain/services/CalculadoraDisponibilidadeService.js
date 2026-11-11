@@ -1,6 +1,6 @@
 import { HorarioSlot } from "../value-objects/HorarioSlot";
 
-const SLOT_STEP_MINUTES = 15;
+const SLOT_STEP_MINUTES = 30;
 
 export class CalculadoraDisponibilidadeService {
   /**

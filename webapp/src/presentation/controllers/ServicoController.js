@@ -12,7 +12,9 @@ export class ServicoController {
 
   async listarAtivos() {
     try {
-      const servicos = await this.listarServicosUseCase.execute();
+      const servicos = (await this.listarServicosUseCase.execute()).map(
+        ({ id, titulo, descricao, preco, duracaoMinutos }) => ({ id, titulo, descricao, preco, duracaoMinutos })
+      );
       return HttpResponse.ok({ servicos });
     } catch (err) {
       return HttpResponse.tratarErro(err);

@@ -6,8 +6,6 @@ export class Colaborador {
     email,
     passwordHash,
     ativo = true,
-    googleRefreshToken = null,
-    icsToken = null,
     createdAt = new Date(),
     servicos = [],
     horarios = [],
@@ -18,14 +16,8 @@ export class Colaborador {
     this.email = email ? email.trim().toLowerCase() : "";
     this.passwordHash = passwordHash;
     this.ativo = Boolean(ativo);
-    this.googleRefreshToken = googleRefreshToken;
-    this.icsToken = icsToken;
     this.createdAt = createdAt;
     this.servicos = servicos;
     this.horarios = horarios;
-  }
-
-  isGoogleCalendarConectado() {
-    return Boolean(this.googleRefreshToken);
   }
 }

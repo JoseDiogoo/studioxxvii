@@ -4,10 +4,15 @@ const crypto = require("crypto");
 
 const prisma = new PrismaClient();
 
-const DEFAULT_PASSWORD = "Studio2026!";
+// A password não fica no código: vem de SEED_PASSWORD ou é gerada ao acaso e mostrada uma vez no fim do seed.
+const DEFAULT_PASSWORD = process.env.SEED_PASSWORD || crypto.randomBytes(9).toString("base64url");
+if (DEFAULT_PASSWORD.length < 10) {
+  console.error("SEED_PASSWORD tem de ter 10+ caracteres.");
+  process.exit(1);
+}
 
 const SERVICOS = [
-  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 20 },
+  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 30 },
   { titulo: "Corte Criança", preco: 13, duracaoMinutos: 30 },
   { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 30 },
   { titulo: "Corte + Lavagem", preco: 17, duracaoMinutos: 40 },
@@ -58,8 +63,7 @@ async function main() {
 
   // 3. Upsert Colaboradores
   const colaboradoresPlaceholder = [
-    { nome: "Barbeiro 1", email: "barbeiro1@studioxxvii.pt" },
-    { nome: "Barbeiro 2", email: "barbeiro2@studioxxvii.pt" },
+    { nome: "Jorge Fernandes", email: "barbeiro1@studioxxvii.pt" },
   ];
 
   const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 12);
@@ -78,7 +82,6 @@ async function main() {
         email: c.email,
         passwordHash,
         salaoId: salao.id,
-        icsToken: crypto.randomBytes(24).toString("base64url"),
       },
     });
 

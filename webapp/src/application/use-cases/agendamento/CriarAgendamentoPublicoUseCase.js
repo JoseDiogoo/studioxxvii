@@ -2,6 +2,27 @@ import crypto from "crypto";
 import { SlotIndisponivelError, RegraNegocioError } from "@/domain/errors/DomainError";
 import { CalculadoraDisponibilidadeService } from "@/domain/services/CalculadoraDisponibilidadeService";
 
+const MAX_DIAS_ANTECEDENCIA = 60;
+const MAX_PENDENTES_POR_TELEFONE = 3;
+
+// Dia (AAAA-MM-DD) e hora (HH:MM) atuais em Lisboa, independentemente do fuso do servidor.
+function agoraEmLisboa() {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Lisbon",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).formatToParts(new Date()).map((p) => [p.type, p.value])
+  );
+  return { hoje: `${partes.year}-${partes.month}-${partes.day}`, agora: `${partes.hour}:${partes.minute}` };
+}
+
+function somarDiasChave(chave, n) {
+  const d = new Date(`${chave}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 export class CriarAgendamentoPublicoUseCase {
   constructor({
     agendamentoRepository,
@@ -9,7 +30,6 @@ export class CriarAgendamentoPublicoUseCase {
     servicoRepository,
     horarioRepository,
     salaoRepository,
-    calendarGateway,
     notificationGateway,
   }) {
     this.agendamentoRepository = agendamentoRepository;
@@ -17,7 +37,6 @@ export class CriarAgendamentoPublicoUseCase {
     this.servicoRepository = servicoRepository;
     this.horarioRepository = horarioRepository;
     this.salaoRepository = salaoRepository;
-    this.calendarGateway = calendarGateway;
     this.notificationGateway = notificationGateway;
   }
 
@@ -36,6 +55,23 @@ export class CriarAgendamentoPublicoUseCase {
       throw new RegraNegocioError("É preciso escolher pelo menos um serviço.");
     }
 
+    // Data e hora: tem de ser um dia real, não passado, e dentro da janela que o site mostra.
+    const { hoje, agora } = agoraEmLisboa();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || Number.isNaN(new Date(`${data}T00:00:00.000Z`).getTime())) {
+      throw new RegraNegocioError("Data inválida.");
+    }
+    if (data < hoje || data > somarDiasChave(hoje, MAX_DIAS_ANTECEDENCIA) || (data === hoje && horaInicio <= agora)) {
+      throw new SlotIndisponivelError("Essa data ou hora já não está disponível. Escolhe outra.");
+    }
+
+    // Limite de marcações pendentes por telefone: um robô com IPs diferentes não consegue encher a agenda.
+    const pendentes = await this.agendamentoRepository.contarPendentesPorTelefone(cliente.telefone, hoje);
+    if (pendentes >= MAX_PENDENTES_POR_TELEFONE) {
+      throw new RegraNegocioError(
+        `Já tens ${MAX_PENDENTES_POR_TELEFONE} marcações por realizar. Espera pela próxima antes de marcar outra.`
+      );
+    }
+
     // 2. Carregar serviços da BD
     const servicoIds = servicos.map((s) => s.servicoId);
     const servicosDb = await this.servicoRepository.findByIds(servicoIds);
@@ -46,12 +82,12 @@ export class CriarAgendamentoPublicoUseCase {
       const sDb = mapServicos.get(s.servicoId);
       if (!sDb) throw new RegraNegocioError("Serviço inválido.");
 
-      let elegiveis = [];
+      // Só profissionais ativos que fazem este serviço; um colaboradorId enviado pelo cliente tem de estar nessa lista.
+      const colabs = await this.colaboradorRepository.findElegiveisPorServico(s.servicoId);
+      let elegiveis = colabs.map((c) => c.colaboradorId || c.id);
       if (s.colaboradorId) {
+        if (!elegiveis.includes(s.colaboradorId)) throw new RegraNegocioError("Profissional inválido para este serviço.");
         elegiveis = [s.colaboradorId];
-      } else {
-        const colabs = await this.colaboradorRepository.findElegiveisPorServico(s.servicoId);
-        elegiveis = colabs.map((c) => c.colaboradorId || c.id);
       }
 
       if (elegiveis.length === 0) {
@@ -117,15 +153,9 @@ export class CriarAgendamentoPublicoUseCase {
       dia: dataObj,
     });
 
-    const total = resultado.agendamentos.reduce((acc, a) => acc + a.valor, 0);
+    const total = Math.round(resultado.agendamentos.reduce((acc, a) => acc + a.valor, 0) * 100) / 100;
 
-    // 5. Integrações assíncronas (Google Calendar e WhatsApp)
-    if (this.calendarGateway) {
-      for (const ag of resultado.agendamentos) {
-        this.calendarGateway.sincronizarEvento(ag).catch(() => {});
-      }
-    }
-
+    // 5. Notificação por WhatsApp (assíncrona)
     if (this.notificationGateway && resultado.agendamentos.length > 0) {
       const primeiro = resultado.agendamentos[0];
       const titulos = servicosPreparados.map((s) => s.titulo).join(" + ");

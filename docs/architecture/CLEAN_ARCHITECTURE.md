@@ -11,7 +11,7 @@ A **Clean Architecture** (Robert C. Martin) tem como objetivo primordial criar s
 2. **Testáveis**: As regras de negócio podem ser testadas sem a UI, a base de dados, o servidor web ou qualquer elemento externo.
 3. **Independentes da UI**: A interface gráfica pode mudar facilmente sem alterar o resto do sistema.
 4. **Independentes da Base de Dados**: A base de dados (PostgreSQL) pode ser substituída sem afetar as regras de negócio.
-5. **Independentes de Qualquer Agente Externo**: As regras de negócio desconhecem as interfaces com o mundo exterior (WhatsApp, Google Calendar, etc.).
+5. **Independentes de Qualquer Agente Externo**: As regras de negócio desconhecem as interfaces com o mundo exterior (WhatsApp, etc.).
 
 ### A Regra de Dependência
 > **As dependências do código-fonte só podem apontar para dentro, em direção às políticas de nível superior (Domínio).**
@@ -68,22 +68,14 @@ Orquestra o fluxo de dados entre o Domínio e os mecanismos de entrega/infraestr
 
 - **Use Cases (`application/use-cases/`)**:
   - **Agendamento**:
-    - `CriarAgendamentoPublicoUseCase`: Orquestra a verificação de disponibilidade, criação/atualização do cliente, criação transacional do agendamento, sincronização com Google Calendar e notificação por WhatsApp.
-    - `ReagendarAgendamentoUseCase`: Move agendamento no calendário, recalcula horas e notifica o cliente.
-    - `CancelarAgendamentoUseCase`: Cancela agendamento, liberta o slot e notifica o cliente.
-    - `RegistarPagamentoUseCase`: Regista o pagamento presencial efetuado e o método utilizado.
-    - `ObterAgendamentosEquipaUseCase`: Devolve os eventos formatados para o FullCalendar.
-    - `ObterHistoricoAgendamentosUseCase`: Lista marcações passadas e futuras.
-    - `ObterEstatisticasEquipaUseCase`: Métricas de volume e faturação.
+    - `CriarAgendamentoPublicoUseCase`: Orquestra a verificação de disponibilidade, criação do cliente (um cliente existente nunca é alterado), criação transacional do agendamento e notificação por WhatsApp.
+    - `AtualizarAgendamentoEquipaUseCase`: Mover, trocar de profissional, cancelar/reativar, registar pagamento e observações; mover/reativar verifica conflitos com bloqueio e notifica o cliente.
   - **Disponibilidade**:
     - `ObterDiasDisponiveisUseCase`: Dias com horários livres para os serviços escolhidos.
     - `ObterHorasDisponiveisUseCase`: Slots horários livres num dia específico.
   - **Colaborador**:
     - `AutenticarColaboradorUseCase`: Validação de login com hash segura.
-    - `ObterPerfilColaboradorUseCase` / `AtualizarPerfilColaboradorUseCase`.
-    - `GerarFeedIcsUseCase`: Geração de ficheiro iCalendar para subscrição em telemóveis.
 - **Ports (`application/ports/`)**:
-  - `ICalendarGateway`: Contrato para sincronização de calendário externo.
   - `INotificationGateway`: Contrato para envio de SMS/WhatsApp.
   - `IPasswordHasher`: Contrato para hash e verificação de passwords.
 - **DTOs (`application/dtos/`)**:
@@ -104,7 +96,6 @@ Implementa as interfaces e contratos definidos pelo Domínio e Aplicação, cone
     - `PostgresHorarioRepository`: Gestão de grelha de horários de trabalho.
     - `PostgresSalaoRepository`: Gestão dos dados da barbearia.
 - **Gateways Externos (`infrastructure/gateways/`)**:
-  - `GoogleCalendarGateway`: Implementação de `ICalendarGateway` via Google Calendar REST API v3.
   - `TwilioWhatsAppGateway`: Implementação de `INotificationGateway` via API da Twilio.
   - `BcryptPasswordHasher`: Implementação de `IPasswordHasher` usando `bcryptjs`.
 - **Segurança & Utilitários (`infrastructure/security/` & `infrastructure/utils/`)**:

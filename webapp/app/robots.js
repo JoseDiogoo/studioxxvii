@@ -5,7 +5,7 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/equipa", "/api/"],
+        disallow: ["/equipa", "/api/", "/faq", "/politica-privacidade", "/termos-condicoes"],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

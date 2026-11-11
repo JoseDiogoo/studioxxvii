@@ -17,8 +17,6 @@ export class PostgresColaboradorRepository extends IColaboradorRepository {
       email: item.email,
       passwordHash: item.passwordHash,
       ativo: item.ativo,
-      googleRefreshToken: item.googleRefreshToken,
-      icsToken: item.icsToken,
       createdAt: item.createdAt,
       servicos: item.servicos,
       horarios: item.horarios,
@@ -39,13 +37,6 @@ export class PostgresColaboradorRepository extends IColaboradorRepository {
   async findByEmail(email) {
     const item = await this.db.colaborador.findUnique({
       where: { email: email.trim().toLowerCase() },
-    });
-    return this._paraEntidade(item);
-  }
-
-  async findByIcsToken(icsToken) {
-    const item = await this.db.colaborador.findUnique({
-      where: { icsToken },
     });
     return this._paraEntidade(item);
   }

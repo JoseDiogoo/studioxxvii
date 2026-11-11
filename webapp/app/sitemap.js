@@ -1,6 +1,6 @@
 export default function sitemap() {
   const base = process.env.SITE_URL || "https://studioxxvii.pt";
-  const paginas = ["", "/marcar", "/faq", "/politica-privacidade", "/termos-condicoes"];
+  const paginas = ["", "/marcar"];
 
   return paginas.map((caminho) => ({
     url: `${base}${caminho}`,

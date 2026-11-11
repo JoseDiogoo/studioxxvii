@@ -28,7 +28,7 @@ model Servico {
   salao            Salao    @relation(fields: [salaoId], references: [id], onDelete: Cascade)
   titulo           String
   descricao        String?
-  preco            Float
+  preco            Decimal  @db.Decimal(10, 2)
   duracaoMinutos   Int
   ativo            Boolean  @default(true)
   colaboradores    ColaboradorServico[]
@@ -48,11 +48,6 @@ model Colaborador {
   horarios     Horario[]
   agendamentos Agendamento[]
   createdAt    DateTime @default(now())
-
-  // Sincronização com o Google Calendar do colaborador (push one-way: app -> Google).
-  googleRefreshToken String?
-  // Feed iCalendar (.ics) só de leitura, para subscrever no telemóvel sem OAuth.
-  icsToken           String?  @unique
 }
 
 model ColaboradorServico {
@@ -116,16 +111,16 @@ model Agendamento {
   data            DateTime
   horaInicio      String
   horaFim         String
-  valor           Float
+  valor           Decimal  @db.Decimal(10, 2)
   pago            Boolean  @default(false)
   metodoPagamento MetodoPagamento?
   observacoes     String?
   status          StatusAgendamento @default(CONFIRMADO)
-  // Id do evento correspondente no Google Calendar do colaborador (sincronização one-way).
-  googleEventId       String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([colaboradorId, data])
   @@index([grupoId])
+  @@index([clienteId])
+  @@index([data])
 }

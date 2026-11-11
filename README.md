@@ -10,7 +10,7 @@ O projeto adota uma arquitetura em camadas concêntricas onde o Domínio é 100%
 
 - **`webapp/src/domain/`**: Entidades, Objetos de Valor, Interfaces de Repositório e Serviços de Domínio Puros (sem dependências de DB ou Frameworks).
 - **`webapp/src/application/`**: Casos de Uso (*Use Cases*), DTOs e Portas para Gateways externos.
-- **`webapp/src/infrastructure/`**: Persistência em PostgreSQL (Repositórios), adaptadores do Google Calendar, Twilio WhatsApp, Bcrypt e utilitários.
+- **`webapp/src/infrastructure/`**: Persistência em PostgreSQL (Repositórios), Twilio WhatsApp, Bcrypt e utilitários.
 - **`webapp/src/presentation/`**: Controllers e Validações Zod para a Web API.
 - **`webapp/app/`**: Next.js 15 App Router com rotas finas de API e páginas UI (`/marcar`, `/equipa`).
 - **`docs/`**: Documentação centralizada e organizada por áreas (Arquitetura, Produto, Design, Planeamento, Deploy, API).

@@ -10,10 +10,6 @@ export class IColaboradorRepository {
     throw new Error("Método findByEmail não implementado.");
   }
 
-  async findByIcsToken(icsToken) {
-    throw new Error("Método findByIcsToken não implementado.");
-  }
-
   async findAtivos() {
     throw new Error("Método findAtivos não implementado.");
   }

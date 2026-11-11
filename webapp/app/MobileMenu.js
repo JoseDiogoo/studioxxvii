@@ -5,11 +5,9 @@ import Link from "next/link";
 import styles from "./home.module.css";
 
 const LINKS = [
-  { href: "#sobre", label: "Sobre" },
   { href: "#servicos", label: "Serviços" },
   { href: "#galeria", label: "Galeria" },
-  { href: "#localizacao", label: "Localização" },
-  { href: "/faq", label: "Perguntas Frequentes" },
+  { href: "#local", label: "Local" },
 ];
 
 export default function MobileMenu() {

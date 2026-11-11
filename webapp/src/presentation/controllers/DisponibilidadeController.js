@@ -1,4 +1,6 @@
 import { HttpResponse } from "../http/HttpResponse";
+import { RateLimiter } from "@/infrastructure/security/RateLimiter";
+import { disponibilidadeDiasSchema, disponibilidadeHorasSchema } from "../validation/schemas";
 import { PostgresServicoRepository } from "@/infrastructure/database/repositories/PostgresServicoRepository";
 import { PostgresColaboradorRepository } from "@/infrastructure/database/repositories/PostgresColaboradorRepository";
 import { PostgresHorarioRepository } from "@/infrastructure/database/repositories/PostgresHorarioRepository";
@@ -28,12 +30,18 @@ export class DisponibilidadeController {
     });
   }
 
-  async obterDias(req) {
-    try {
-      const body = await req.json().catch(() => null);
-      if (!body) return HttpResponse.badRequest("JSON inválido.");
+  // Rotas públicas que consultam a BD: 120 pedidos por minuto por IP chega para o ecrã de marcação (que atualiza de 10 em 10 s).
+  _limitado(req) {
+    return RateLimiter.excedeu(`disp:${RateLimiter.ipDoPedido(req)}`, 120, 60_000);
+  }
 
-      let { servicos, ano, mes, de } = body;
+  async obterDias(req) {
+    if (this._limitado(req)) return HttpResponse.tooManyRequests();
+    try {
+      const parsed = disponibilidadeDiasSchema.safeParse(await HttpResponse.lerJson(req));
+      if (!parsed.success) return HttpResponse.badRequest("Dados inválidos.");
+
+      let { servicos, ano, mes, de } = parsed.data;
 
       if (!ano && de) {
         const parts = de.split("-").map(Number);
@@ -46,12 +54,11 @@ export class DisponibilidadeController {
         ano = hoje.getFullYear();
         mes = hoje.getMonth() + 1;
       }
+      if (!Number.isInteger(ano) || !Number.isInteger(mes) || mes < 1 || mes > 12 || ano < 2024 || ano > 2100) {
+        return HttpResponse.badRequest("Mês inválido.");
+      }
 
-      const resultado = await this.obterDiasUseCase.execute({
-        servicos,
-        ano: Number(ano),
-        mes: Number(mes),
-      });
+      const resultado = await this.obterDiasUseCase.execute({ servicos, ano, mes });
 
       return HttpResponse.ok(resultado);
     } catch (err) {
@@ -60,17 +67,15 @@ export class DisponibilidadeController {
   }
 
   async obterHoras(req) {
+    if (this._limitado(req)) return HttpResponse.tooManyRequests();
     try {
-      const body = await req.json().catch(() => null);
-      if (!body) return HttpResponse.badRequest("JSON inválido.");
+      const parsed = disponibilidadeHorasSchema.safeParse(await HttpResponse.lerJson(req));
+      if (!parsed.success) return HttpResponse.badRequest("Dados inválidos.");
 
-      const { servicos, data } = body;
-      if (!data) return HttpResponse.badRequest("data é obrigatória.");
+      const { servicos, data } = parsed.data;
+      if (Number.isNaN(new Date(`${data}T00:00:00.000Z`).getTime())) return HttpResponse.badRequest("Data inválida.");
 
-      const resultado = await this.obterHorasUseCase.execute({
-        servicos,
-        data,
-      });
+      const resultado = await this.obterHorasUseCase.execute({ servicos, data });
 
       return HttpResponse.ok(resultado);
     } catch (err) {

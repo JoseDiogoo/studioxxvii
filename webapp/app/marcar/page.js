@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./marcar.module.css";
-import LogoBadge from "../LogoBadge";
 
 const NOMES_MES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -11,8 +10,11 @@ const NOMES_MES = [
 ];
 const NOMES_DIA_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
+const TOTAL_PASSOS = 3;
+const ETIQUETAS = ["Serviço", "Dia e hora", "Dados"];
+
 function formatarEuros(valor) {
-  return valor.toLocaleString("pt-PT", { style: "currency", currency: "EUR" });
+  return valor.toLocaleString("pt-PT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 }
 
 function formatarDataOnly(date) {
@@ -22,8 +24,10 @@ function formatarDataOnly(date) {
   return `${y}-${m}-${d}`;
 }
 
-function iniciais(nome) {
-  return nome.trim().charAt(0).toUpperCase();
+function formatarDiaLongo(chave) {
+  if (!chave) return "";
+  const [y, m, d] = chave.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" });
 }
 
 async function fetchJSON(url, options) {
@@ -32,11 +36,40 @@ async function fetchJSON(url, options) {
     headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Ocorreu um erro. Tenta novamente.");
+  if (!res.ok) {
+    const err = new Error(data.error || "Ocorreu um erro. Tenta novamente.");
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 
-const TOTAL_PASSOS = 4;
+// Este mês e o seguinte: chega para mostrar as próximas datas sem calendário.
+async function buscarDias(servicos) {
+  const hoje = new Date();
+  const meses = [0, 1].map((i) => new Date(hoje.getFullYear(), hoje.getMonth() + i, 1));
+  const rs = await Promise.all(
+    meses.map((m) =>
+      fetchJSON("/api/disponibilidade/dias", {
+        method: "POST",
+        body: JSON.stringify({
+          servicos,
+          de: formatarDataOnly(m),
+          ate: formatarDataOnly(new Date(m.getFullYear(), m.getMonth() + 1, 0)),
+        }),
+      })
+    )
+  );
+  return new Set(rs.flatMap((r) => r.diasDisponiveis));
+}
+
+async function buscarHoras(servicos, data) {
+  const d = await fetchJSON("/api/disponibilidade/horas", {
+    method: "POST",
+    body: JSON.stringify({ servicos, data }),
+  });
+  return d.slots;
+}
 
 export default function MarcarPage() {
   const [passo, setPasso] = useState(1);
@@ -44,14 +77,8 @@ export default function MarcarPage() {
   const [loading, setLoading] = useState(false);
 
   const [servicos, setServicos] = useState([]);
-  const [selecionadosIds, setSelecionadosIds] = useState([]);
-  const [colaboradorPorServico, setColaboradorPorServico] = useState({});
-  const [colaboradoresDisponiveis, setColaboradoresDisponiveis] = useState({});
+  const [servicoId, setServicoId] = useState(null);
 
-  const [mesAtual, setMesAtual] = useState(() => {
-    const hoje = new Date();
-    return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  });
   const [diasDisponiveis, setDiasDisponiveis] = useState(new Set());
   const [diaSelecionado, setDiaSelecionado] = useState(null);
 
@@ -69,67 +96,81 @@ export default function MarcarPage() {
       .catch((e) => setErro(e.message));
   }, []);
 
-  const servicosSelecionados = useMemo(
-    () => (Array.isArray(servicos) ? servicos.filter((s) => selecionadosIds.includes(s.id)) : []),
-    [servicos, selecionadosIds]
+  const servicoEscolhido = useMemo(
+    () => (Array.isArray(servicos) ? servicos.find((s) => s.id === servicoId) : null) || null,
+    [servicos, servicoId]
   );
 
-  const total = useMemo(
-    () => servicosSelecionados.reduce((acc, s) => acc + s.preco, 0),
-    [servicosSelecionados]
-  );
-
+  // Só há um barbeiro: o servidor atribui o profissional livre automaticamente.
   const payloadServicos = useMemo(
-    () =>
-      servicosSelecionados.map((s) => ({
-        servicoId: s.id,
-        colaboradorId: colaboradorPorServico[s.id] || null,
-      })),
-    [servicosSelecionados, colaboradorPorServico]
+    () => (servicoId ? [{ servicoId, colaboradorId: null }] : []),
+    [servicoId]
   );
 
-  function toggleServico(id) {
-    setSelecionadosIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  function escolherServico(id) {
+    setServicoId(id);
+    setDiaSelecionado(null);
+    setHoraSelecionada(null);
+    setDiasDisponiveis(new Set());
+    setHorasDisponiveis([]);
+    setErro("");
+    setPasso(2);
   }
 
   useEffect(() => {
-    if (passo !== 2) return;
-    servicosSelecionados.forEach((s) => {
-      if (colaboradoresDisponiveis[s.id]) return;
-      fetchJSON(`/api/colaboradores?servicoId=${s.id}`)
-        .then((d) => setColaboradoresDisponiveis((prev) => ({ ...prev, [s.id]: d.colaboradores })))
-        .catch((e) => setErro(e.message));
-    });
-  }, [passo, servicosSelecionados, colaboradoresDisponiveis]);
-
-  useEffect(() => {
-    if (passo !== 3) return;
+    if (passo !== 2 || !servicoId) return;
     setLoading(true);
     setErro("");
-    const de = formatarDataOnly(mesAtual);
-    const ateData = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 0);
-    const ate = formatarDataOnly(ateData);
-    fetchJSON("/api/disponibilidade/dias", {
-      method: "POST",
-      body: JSON.stringify({ servicos: payloadServicos, de, ate }),
-    })
-      .then((d) => setDiasDisponiveis(new Set(d.dias)))
+    buscarDias(payloadServicos)
+      .then(setDiasDisponiveis)
       .catch((e) => setErro(e.message))
       .finally(() => setLoading(false));
-  }, [passo, mesAtual, payloadServicos]);
+  }, [passo, payloadServicos, servicoId]);
 
   useEffect(() => {
-    if (passo !== 3 || !diaSelecionado) return;
+    if (passo !== 2 || !diaSelecionado) return;
     setLoading(true);
     setErro("");
-    fetchJSON("/api/disponibilidade/horas", {
-      method: "POST",
-      body: JSON.stringify({ servicos: payloadServicos, data: diaSelecionado }),
-    })
-      .then((d) => setHorasDisponiveis(d.horas))
+    buscarHoras(payloadServicos, diaSelecionado)
+      .then(setHorasDisponiveis)
       .catch((e) => setErro(e.message))
       .finally(() => setLoading(false));
   }, [passo, diaSelecionado, payloadServicos]);
+
+  // Enquanto o cliente está no passo das horas, volta a pedir a disponibilidade de 10 em 10 segundos
+  // (e quando volta ao separador): uma hora que outra pessoa acabou de marcar desaparece sozinha.
+  useEffect(() => {
+    if (passo !== 2 || !servicoId) return;
+    let ativo = true;
+    async function atualizar() {
+      if (document.hidden) return;
+      try {
+        const dias = await buscarDias(payloadServicos);
+        if (!ativo) return;
+        setDiasDisponiveis(dias);
+        if (diaSelecionado && !dias.has(diaSelecionado)) {
+          // O dia ficou cheio: passa para o primeiro dia livre.
+          setDiaSelecionado(null);
+          setHoraSelecionada(null);
+          setHorasDisponiveis([]);
+          return;
+        }
+        if (diaSelecionado) {
+          const horas = await buscarHoras(payloadServicos, diaSelecionado);
+          if (ativo) setHorasDisponiveis(horas);
+        }
+      } catch {
+        // Falha pontual de rede: mantém o que já está no ecrã e tenta na próxima volta.
+      }
+    }
+    const id = setInterval(atualizar, 10000);
+    document.addEventListener("visibilitychange", atualizar);
+    return () => {
+      ativo = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", atualizar);
+    };
+  }, [passo, servicoId, diaSelecionado, payloadServicos]);
 
   async function confirmarMarcacao() {
     setErro("");
@@ -165,8 +206,14 @@ export default function MarcarPage() {
         }),
       });
       setResultado(data);
-      setPasso(5);
+      setPasso(4);
     } catch (e) {
+      if (e.status === 409) {
+        // Alguém marcou essa hora entretanto: volta às horas (já atualizadas) para escolher outra.
+        setHoraSelecionada(null);
+        setHorasDisponiveis([]);
+        setPasso(2);
+      }
       setErro(e.message);
     } finally {
       setLoading(false);
@@ -178,310 +225,203 @@ export default function MarcarPage() {
     setPasso(novoPasso);
   }
 
-  const podeContinuar = {
-    1: selecionadosIds.length > 0,
-    2: true,
-    3: !!diaSelecionado && !!horaSelecionada,
-    4: true,
-  };
-
   return (
     <div className={styles.pagina}>
-      <div className={styles.hero}>
-        <Link href="/" className={styles.heroBadge} aria-label="Voltar à página inicial">
-          <LogoBadge size={92} />
+      <header className={styles.topo}>
+        <Link href="/" className={styles.marca} aria-label="Voltar à página inicial">
+          <span>STUDIO <em>XXVII</em></span>
         </Link>
-        <div className={styles.heroTitulo}>STUDIO XXVII</div>
-        <div className={styles.heroSub}>R. Prof. Eng. Joaquim Vieira Natividade, Alcobaça · Terça a Sábado, 10h–19h</div>
-      </div>
+        <span className={styles.topoInfo}>Jorge Fernandes · Alcobaça</span>
+      </header>
 
-      <div className={styles.conteudo}>
+      <main className={styles.conteudo}>
         {passo <= TOTAL_PASSOS && (
-          <div className={styles.passos}>
-            {Array.from({ length: TOTAL_PASSOS }, (_, i) => i + 1).map((p) => (
-              <span key={p} className={`${styles.passo} ${p <= passo ? styles.passoAtivo : ""}`} />
+          <ol className={styles.passos} aria-label="Progresso">
+            {ETIQUETAS.map((nome, i) => (
+              <li
+                key={nome}
+                className={`${styles.passo} ${i + 1 <= passo ? styles.passoAtivo : ""}`}
+                aria-current={i + 1 === passo ? "step" : undefined}
+              >
+                <span className={styles.passoBarra} />
+                <span className={styles.passoNome}>{i + 1}. {nome}</span>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
 
-        {erro && <div className={styles.erro}>{erro}</div>}
-
-        {passo <= TOTAL_PASSOS && (
-          <div className={styles.cartaoPrincipal}>
-            {passo === 1 && (
-              <PassoServicos
-                servicos={servicos}
-                selecionadosIds={selecionadosIds}
-                toggleServico={toggleServico}
-              />
-            )}
-
-            {passo === 2 && (
-              <PassoProfissionais
-                servicosSelecionados={servicosSelecionados}
-                colaboradorPorServico={colaboradorPorServico}
-                setColaboradorPorServico={setColaboradorPorServico}
-                colaboradoresDisponiveis={colaboradoresDisponiveis}
-              />
-            )}
-
-            {passo === 3 && (
-              <PassoDiaHora
-                mesAtual={mesAtual}
-                setMesAtual={setMesAtual}
-                diasDisponiveis={diasDisponiveis}
-                diaSelecionado={diaSelecionado}
-                setDiaSelecionado={(d) => {
-                  setDiaSelecionado(d);
-                  setHoraSelecionada(null);
-                }}
-                horasDisponiveis={horasDisponiveis}
-                horaSelecionada={horaSelecionada}
-                setHoraSelecionada={setHoraSelecionada}
-                loading={loading}
-              />
-            )}
-
-            {passo === 4 && (
-              <PassoConfirmacao
-                servicosSelecionados={servicosSelecionados}
-                colaboradorPorServico={colaboradorPorServico}
-                colaboradoresDisponiveis={colaboradoresDisponiveis}
-                diaSelecionado={diaSelecionado}
-                horaSelecionada={horaSelecionada}
-                total={total}
-                cliente={cliente}
-                setCliente={setCliente}
-                aceitouTermos={aceitouTermos}
-                setAceitouTermos={setAceitouTermos}
-                empresaSite={empresaSite}
-                setEmpresaSite={setEmpresaSite}
-              />
-            )}
-          </div>
+        {passo > 2 && passo <= TOTAL_PASSOS && (
+          <button type="button" className={styles.voltar} onClick={() => irPara(passo - 1)}>
+            ← Voltar
+          </button>
         )}
 
-        {passo === 5 && resultado && <PassoSucesso resultado={resultado} />}
-      </div>
+        {erro && <div className={styles.erro} role="alert">{erro}</div>}
 
-      {passo <= TOTAL_PASSOS && (
-        <BarraFixa
-          passo={passo}
-          irPara={irPara}
-          loading={loading}
-          confirmarMarcacao={confirmarMarcacao}
-          total={total}
-          podeContinuar={podeContinuar}
-        />
+        {passo === 1 && (
+          <PassoServicos servicos={servicos} servicoId={servicoId} escolherServico={escolherServico} />
+        )}
+
+        {passo === 2 && (
+          <PassoDiaHora
+            servico={servicoEscolhido}
+            diasDisponiveis={diasDisponiveis}
+            diaSelecionado={diaSelecionado}
+            setDiaSelecionado={(d) => {
+              setDiaSelecionado(d);
+              setHoraSelecionada(null);
+              setHorasDisponiveis([]);
+            }}
+            horasDisponiveis={horasDisponiveis}
+            escolherHora={(h) => {
+              setHoraSelecionada(h);
+              irPara(3);
+            }}
+            loading={loading}
+            voltar={() => irPara(1)}
+          />
+        )}
+
+        {passo === 3 && (
+          <PassoDados
+            servico={servicoEscolhido}
+            diaSelecionado={diaSelecionado}
+            horaSelecionada={horaSelecionada}
+            cliente={cliente}
+            setCliente={setCliente}
+            aceitouTermos={aceitouTermos}
+            setAceitouTermos={setAceitouTermos}
+            empresaSite={empresaSite}
+            setEmpresaSite={setEmpresaSite}
+          />
+        )}
+
+        {passo === 4 && resultado && <PassoSucesso resultado={resultado} servico={servicoEscolhido} />}
+      </main>
+
+      {passo === 3 && (
+        <div className={styles.barraFixa}>
+          <button type="button" className={styles.botao} disabled={loading} onClick={confirmarMarcacao}>
+            {loading ? "A confirmar…" : "Confirmar marcação"}
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
-function PassoServicos({ servicos, selecionadosIds, toggleServico }) {
+function PassoServicos({ servicos, servicoId, escolherServico }) {
   return (
-    <div>
-      <div className={styles.tituloPasso}>Escolhe os serviços</div>
-      <div className={styles.linhas}>
-        {servicos.map((s) => {
-          const on = selecionadosIds.includes(s.id);
+    <section>
+      <h1 className={styles.tituloPasso}>Que corte queres?</h1>
+      <div className={styles.lista}>
+        {servicos.map((s) => (
+          <button
+            type="button"
+            key={s.id}
+            className={`${styles.opcao} ${servicoId === s.id ? styles.opcaoOn : ""}`}
+            onClick={() => escolherServico(s.id)}
+          >
+            <span className={styles.opcaoNome}>{s.titulo}</span>
+            <span className={styles.opcaoLinha}>
+              <span className={styles.opcaoPreco}>{formatarEuros(s.preco)}</span>
+              <span className={styles.opcaoMeta}>{s.duracaoMinutos} min</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const DIAS_POR_PAGINA = 10;
+
+// Sem calendário nem scroll: as próximas datas livres em chips + as horas do dia escolhido.
+// Tocar numa hora avança logo para o passo seguinte.
+function PassoDiaHora({
+  servico, diasDisponiveis, diaSelecionado, setDiaSelecionado, horasDisponiveis, escolherHora, loading, voltar,
+}) {
+  const [pagina, setPagina] = useState(0);
+
+  const dias = useMemo(() => {
+    const hoje = formatarDataOnly(new Date());
+    return [...diasDisponiveis].filter((d) => d >= hoje).sort();
+  }, [diasDisponiveis]);
+
+  // Escolhe já o primeiro dia livre, para as horas aparecerem sem um toque extra.
+  useEffect(() => {
+    if (!diaSelecionado && dias.length) setDiaSelecionado(dias[0]);
+  }, [dias, diaSelecionado, setDiaSelecionado]);
+
+  const totalPaginas = Math.max(1, Math.ceil(dias.length / DIAS_POR_PAGINA));
+  const visiveis = dias.slice(pagina * DIAS_POR_PAGINA, (pagina + 1) * DIAS_POR_PAGINA);
+
+  return (
+    <section>
+      <h1 className={styles.soLeitor}>Dia e hora</h1>
+      <div className={styles.linhaTopo}>
+        <button type="button" className={styles.voltar} onClick={voltar}>← Voltar</button>
+        <span className={styles.etiqueta}>{servico?.titulo}</span>
+      </div>
+
+      <div className={styles.diasCabecalho}>
+        <span className={styles.grupoLabel}>Dia</span>
+        {totalPaginas > 1 && (
+          <span className={styles.diasPaginas}>
+            <button type="button" className={styles.navBotao} disabled={pagina === 0} onClick={() => setPagina(pagina - 1)} aria-label="Datas anteriores">‹</button>
+            <button type="button" className={styles.navBotao} disabled={pagina >= totalPaginas - 1} onClick={() => setPagina(pagina + 1)} aria-label="Mais datas">›</button>
+          </span>
+        )}
+      </div>
+      <div className={styles.diasGrid}>
+        {visiveis.map((chave) => {
+          const [y, m, d] = chave.split("-").map(Number);
+          const dt = new Date(y, m - 1, d);
+          const on = diaSelecionado === chave;
           return (
-            <label key={s.id} className={styles.linha}>
-              <input
-                type="checkbox"
-                className={styles.checkInput}
-                checked={on}
-                onChange={() => toggleServico(s.id)}
-              />
-              <div className={styles.linhaInfo}>
-                <div className={styles.linhaTitulo}>{s.titulo}</div>
-                <div className={styles.linhaMeta}>{s.duracaoMinutos} min · {formatarEuros(s.preco)}</div>
-              </div>
-            </label>
+            <button
+              type="button"
+              key={chave}
+              className={`${styles.diaChip} ${on ? styles.diaChipOn : ""}`}
+              onClick={() => setDiaSelecionado(chave)}
+              aria-pressed={on}
+              aria-label={dt.toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" })}
+            >
+              <span className={styles.diaChipSemana}>{NOMES_DIA_SEMANA[dt.getDay()]}</span>
+              <span className={styles.diaChipNum}>{d}</span>
+              <span className={styles.diaChipMes}>{NOMES_MES[m - 1].slice(0, 3)}</span>
+            </button>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function PassoProfissionais({ servicosSelecionados, colaboradorPorServico, setColaboradorPorServico, colaboradoresDisponiveis }) {
-  return (
-    <div>
-      <div className={styles.tituloPasso}>Escolhe o profissional</div>
-      {servicosSelecionados.map((s) => {
-        const opcoes = [{ id: null, nome: "Sem preferência" }, ...(colaboradoresDisponiveis[s.id] || [])];
-        const atual = colaboradorPorServico[s.id] || null;
-        return (
-          <div key={s.id}>
-            <div className={styles.grupoLabel}>{s.titulo}</div>
-            <div className={styles.linhas}>
-              {opcoes.map((c) => {
-                const on = atual === c.id;
-                return (
-                  <label key={c.id ?? "sem-preferencia"} className={styles.linha}>
-                    <span className={`${styles.avatar} ${c.id ? "" : styles.avatarVazio}`}>
-                      {c.id ? iniciais(c.nome) : "?"}
-                    </span>
-                    <div className={styles.linhaInfo}>
-                      <div className={styles.linhaTitulo}>{c.nome}</div>
-                    </div>
-                    <input
-                      type="radio"
-                      name={`profissional-${s.id}`}
-                      className={styles.checkInput}
-                      checked={on}
-                      onChange={() => setColaboradorPorServico((prev) => ({ ...prev, [s.id]: c.id }))}
-                    />
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function PassoDiaHora({
-  mesAtual, setMesAtual, diasDisponiveis, diaSelecionado, setDiaSelecionado,
-  horasDisponiveis, horaSelecionada, setHoraSelecionada, loading,
-}) {
-  const ano = mesAtual.getFullYear();
-  const mes = mesAtual.getMonth();
-  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
-  const totalDias = new Date(ano, mes + 1, 0).getDate();
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const inicioMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-
-  const celulas = [];
-  for (let i = 0; i < primeiroDiaSemana; i++) celulas.push(null);
-  for (let dia = 1; dia <= totalDias; dia++) celulas.push(new Date(ano, mes, dia));
-
-  const grupos = agruparHoras(horasDisponiveis);
-
-  return (
-    <div>
-      <div className={styles.tituloPasso}>Escolhe o dia e a hora</div>
-      <div className={styles.calendarioWrap}>
-        <div className={styles.calendarioHeader}>
-          <button
-            type="button"
-            className={styles.navBotao}
-            disabled={mesAtual <= inicioMesAtual}
-            onClick={() => setMesAtual(new Date(ano, mes - 1, 1))}
-            aria-label="Mês anterior"
-          >
-            ‹
-          </button>
-          <span className={styles.calendarioMes}>{NOMES_MES[mes]} {ano}</span>
-          <button
-            type="button"
-            className={styles.navBotao}
-            onClick={() => setMesAtual(new Date(ano, mes + 1, 1))}
-            aria-label="Mês seguinte"
-          >
-            ›
-          </button>
-        </div>
-        <div className={styles.calendarioGrid}>
-          {NOMES_DIA_SEMANA.map((d, i) => (
-            <div key={i} className={styles.diaSemanaLabel}>{d}</div>
-          ))}
-          {celulas.map((data, i) => {
-            if (!data) return <div key={i} className={styles.dia} />;
-            const chave = formatarDataOnly(data);
-            const disponivel = diasDisponiveis.has(chave) && data >= hoje;
-            const selecionado = diaSelecionado === chave;
-            return (
-              <button
-                type="button"
-                key={i}
-                disabled={!disponivel}
-                className={`${styles.dia} ${disponivel ? styles.diaDisponivel : ""} ${selecionado ? styles.diaSelecionado : ""}`}
-                onClick={() => setDiaSelecionado(chave)}
-                aria-label={data.toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" })}
-                aria-pressed={selecionado}
-              >
-                {data.getDate()}
-              </button>
-            );
-          })}
-        </div>
+        {!loading && dias.length === 0 && <p className={styles.linhaMeta}>Sem datas disponíveis.</p>}
       </div>
 
-      {diaSelecionado && (
-        <div className={styles.horasWrap}>
-          {loading && <div className={styles.linhaMeta}>A carregar horas…</div>}
-          {!loading && horasDisponiveis.length === 0 && (
-            <div className={styles.linhaMeta}>Sem horas disponíveis nesse dia.</div>
-          )}
-          {Object.entries(grupos).map(([nome, horas]) =>
-            horas.length === 0 ? null : (
-              <div key={nome}>
-                <div className={styles.grupoLabel}>{nome}</div>
-                <div className={styles.horasGrid}>
-                  {horas.map((h) => (
-                    <button
-                      type="button"
-                      key={h}
-                      className={`${styles.horaBotao} ${horaSelecionada === h ? styles.horaBotaoSelecionada : ""}`}
-                      onClick={() => setHoraSelecionada(h)}
-                      aria-pressed={horaSelecionada === h}
-                    >
-                      {h}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )
-          )}
-        </div>
+      <div className={styles.grupoLabel}>Hora</div>
+      {loading && <p className={styles.linhaMeta}>A carregar…</p>}
+      {!loading && diaSelecionado && horasDisponiveis.length === 0 && (
+        <p className={styles.linhaMeta}>Sem horas disponíveis nesse dia.</p>
       )}
-    </div>
+      <div className={styles.horasGrid}>
+        {horasDisponiveis.map((h) => (
+          <button type="button" key={h} className={styles.horaBotao} onClick={() => escolherHora(h)}>
+            {h}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
-function agruparHoras(horas) {
-  const grupos = { "Manhã": [], "Tarde": [], "Noite": [] };
-  for (const h of horas) {
-    const hora = Number(h.split(":")[0]);
-    if (hora < 13) grupos["Manhã"].push(h);
-    else if (hora < 19) grupos["Tarde"].push(h);
-    else grupos["Noite"].push(h);
-  }
-  return grupos;
-}
-
-function PassoConfirmacao({
-  servicosSelecionados, colaboradorPorServico, colaboradoresDisponiveis,
-  diaSelecionado, horaSelecionada, total, cliente, setCliente, aceitouTermos, setAceitouTermos,
+function PassoDados({
+  servico, diaSelecionado, horaSelecionada, cliente, setCliente, aceitouTermos, setAceitouTermos,
   empresaSite, setEmpresaSite,
 }) {
-  function nomeColaborador(servicoId) {
-    const id = colaboradorPorServico[servicoId];
-    if (!id) return "Sem preferência";
-    const lista = colaboradoresDisponiveis[servicoId] || [];
-    return lista.find((c) => c.id === id)?.nome || "—";
-  }
-
   return (
-    <div>
-      <div className={styles.tituloPasso}>Confirma a marcação</div>
-      <div className={styles.resumoWrap}>
-        {servicosSelecionados.map((s) => (
-          <div key={s.id} className={styles.resumoLinha}>
-            <span>{s.titulo} · {nomeColaborador(s.id)}</span>
-            <span>{formatarEuros(s.preco)}</span>
-          </div>
-        ))}
-        <div className={styles.resumoLinha}>
-          <span>{diaSelecionado} às {horaSelecionada}</span>
-          <strong>{formatarEuros(total)}</strong>
-        </div>
-      </div>
+    <section>
+      <p className={styles.etiqueta}>
+        {servico?.titulo} · {formatarDiaLongo(diaSelecionado)} às {horaSelecionada}
+      </p>
+      <h1 className={styles.tituloPasso}>Os teus dados</h1>
 
       <div className={styles.formWrap}>
         <div className={styles.campo}>
@@ -489,7 +429,7 @@ function PassoConfirmacao({
           <input id="campo-nome" name="nome" autoComplete="name" value={cliente.nome} onChange={(e) => setCliente({ ...cliente, nome: e.target.value })} />
         </div>
         <div className={styles.campo}>
-          <label htmlFor="campo-telefone">Telefone</label>
+          <label htmlFor="campo-telefone">Telemóvel</label>
           <input id="campo-telefone" name="telefone" type="tel" autoComplete="tel" value={cliente.telefone} onChange={(e) => setCliente({ ...cliente, telefone: e.target.value })} placeholder="+351 9xx xxx xxx" />
         </div>
         <div className={styles.campo}>
@@ -509,61 +449,23 @@ function PassoConfirmacao({
           <span>
             Li e aceito os{" "}
             <Link href="/termos-condicoes" target="_blank" rel="noopener">Termos e Condições</Link> e a{" "}
-            <Link href="/politica-privacidade" target="_blank" rel="noopener">Política de Privacidade</Link>,
-            que autoriza o uso dos meus dados para gerir esta marcação.
+            <Link href="/politica-privacidade" target="_blank" rel="noopener">Política de Privacidade</Link>.
           </span>
         </label>
       </div>
-    </div>
+    </section>
   );
 }
 
-function PassoSucesso({ resultado }) {
+function PassoSucesso({ resultado, servico }) {
   return (
-    <div className={styles.sucesso}>
-      <div className={styles.sucessoTitulo}>Marcação confirmada!</div>
-      <p>Dia {resultado.data} às {resultado.horaInicio}</p>
-      <p>Total a pagar na barbearia: {formatarEuros(resultado.total)}</p>
-      <p className={styles.linhaMeta}>Guarda esta confirmação. Até já!</p>
-      <div className={styles.sucessoBotoes}>
-        <Link href="/" className={styles.botao}>Voltar ao início</Link>
-      </div>
-    </div>
-  );
-}
-
-function BarraFixa({ passo, irPara, loading, confirmarMarcacao, total, podeContinuar }) {
-  return (
-    <div className={styles.barraFixa}>
-      <div>
-        {passo > 1 ? (
-          <button type="button" className={styles.botaoSecundario} onClick={() => irPara(passo - 1)}>
-            Voltar
-          </button>
-        ) : (
-          <Link href="/" className={styles.botaoSecundario}>
-            Voltar
-          </Link>
-        )}
-      </div>
-      <div className={styles.total}>
-        Total: <span className={styles.totalValor}>{formatarEuros(total)}</span>
-      </div>
-      {passo < TOTAL_PASSOS && (
-        <button
-          type="button"
-          className={styles.botao}
-          disabled={!podeContinuar[passo] || loading}
-          onClick={() => irPara(passo + 1)}
-        >
-          Continuar
-        </button>
-      )}
-      {passo === TOTAL_PASSOS && (
-        <button type="button" className={styles.botao} disabled={loading} onClick={confirmarMarcacao}>
-          {loading ? "A confirmar…" : "Confirmar marcação"}
-        </button>
-      )}
-    </div>
+    <section className={styles.sucesso}>
+      <p className={styles.etiqueta}>Marcação confirmada</p>
+      <h1 className={styles.tituloPasso}>Até já!</h1>
+      <p className={styles.sucessoLinha}>{servico?.titulo}</p>
+      <p className={styles.sucessoLinha}>{formatarDiaLongo(resultado.data)} às {resultado.horaInicio}</p>
+      <p className={styles.linhaMeta}>Studio XXVII · R. Prof. Eng. Joaquim Vieira Natividade, Alcobaça</p>
+      <Link href="/" className={styles.botao}>Voltar ao início</Link>
+    </section>
   );
 }
