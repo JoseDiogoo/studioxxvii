@@ -135,9 +135,10 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Velocidade: cada foto demora ~7s a passar (a faixa percorre 2 grupos por volta). */}
       {fotos.length > 0 && (
         <section id="galeria" className={styles.galeriaSeccao} aria-label="Cortes">
-          <div className={styles.faixa}>
+          <div className={styles.faixa} style={{ animationDuration: `${fotos.length * 2 * 7}s` }}>
             {[0, 1, 2, 3].map((copia) => (
               <div className={styles.faixaGrupo} key={copia} aria-hidden={copia > 0 ? "true" : undefined}>
                 {fotos.map((src) => (
