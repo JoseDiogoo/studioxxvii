@@ -168,6 +168,14 @@ export class CriarAgendamentoPublicoUseCase {
         dataStr,
         horaInicio,
       }).catch(() => {});
+
+      this.notificationGateway.enviarNovaMarcacaoBarbeiro({
+        nomeCliente: cliente.nome,
+        telefoneCliente: cliente.telefone,
+        servicoTitulo: titulos,
+        dataStr,
+        horaInicio,
+      }).catch(() => {});
     }
 
     return {
