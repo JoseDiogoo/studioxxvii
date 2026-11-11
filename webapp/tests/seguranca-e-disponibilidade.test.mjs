@@ -35,6 +35,23 @@ test("hora marcada (e as que se sobrepõem) desaparece; marcação cancelada lib
   assert.ok(sem.includes("11:00"));
 });
 
+test("depois de um corte de 45 min a hora seguinte é logo a do fim dele (sem 15 min mortos)", () => {
+  const marcado = [{ colaboradorId: "c1", horaInicio: "10:00", horaFim: "10:45", status: "CONFIRMADO" }];
+  const slots = CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({
+    servicosPreparados: servico(45), horarios, agendamentos: marcado,
+  }).map((s) => s.horaInicio);
+  assert.ok(slots.includes("10:45") && !slots.includes("10:00") && !slots.includes("10:30"));
+  // continua sem passar do fecho (13:00): um serviço de 45 min não começa depois das 12:15
+  assert.ok(slots.every((h) => h <= "12:15"));
+});
+
+test("serviço de 1h20 (Pack 27) só começa se acabar até ao fecho", () => {
+  const slots = CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({
+    servicosPreparados: servico(80), horarios, agendamentos: [],
+  }).map((s) => s.horaInicio);
+  assert.equal(slots.at(-1), "11:30"); // 11:30 + 1h20 = 12:50
+});
+
 test("IP vem de X-Real-IP; X-Forwarded-For falsificado é ignorado", () => {
   const req = (h) => ({ headers: new Headers(h) });
   assert.equal(RateLimiter.ipDoPedido(req({ "x-real-ip": "1.2.3.4", "x-forwarded-for": "9.9.9.9" })), "1.2.3.4");

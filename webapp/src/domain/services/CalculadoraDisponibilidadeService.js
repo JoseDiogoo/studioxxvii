@@ -97,8 +97,16 @@ export class CalculadoraDisponibilidadeService {
 
     if (!isFinite(minInicio)) return [];
 
+    // Inícios possíveis: de 30 em 30 minutos e também logo a seguir ao fim de cada marcação existente.
+    // Assim um corte de 45 min seguido de outro não deixa 15 min mortos por não caírem na grelha.
+    const inicios = new Set();
+    for (let start = minInicio; start <= maxFim; start += SLOT_STEP_MINUTES) inicios.add(start);
+    for (const intervalos of ocupadoPorColaborador.values()) {
+      for (const [, fim] of intervalos) if (fim >= minInicio && fim <= maxFim) inicios.add(fim);
+    }
+
     const validos = [];
-    for (let start = minInicio; start <= maxFim; start += SLOT_STEP_MINUTES) {
+    for (const start of [...inicios].sort((a, b) => a - b)) {
       if (ehHoje && start <= minutosAgora) continue;
 
       const atribuicao = this.tentarEncaixe(start, servicosPreparados, horarioPorColaborador, ocupadoPorColaborador);
