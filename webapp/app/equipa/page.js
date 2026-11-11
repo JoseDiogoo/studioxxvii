@@ -19,7 +19,7 @@ const VISTAS = [
   { id: "dayGridMonth", label: "Mês" },
 ];
 const ABRE = 10 * 60; // 10:00
-const FECHA = 20 * 60; // 20:00: o último corte começa às 19:00 e pode acabar até às 20:00
+const FECHA = 19 * 60; // última hora de início; o serviço pode acabar depois
 const MIN_LIVRE = 30; // só mostra "livre" a partir de meia hora
 
 const ESTADOS = {
@@ -303,7 +303,7 @@ export default function AgendaPage() {
             allDaySlot={false}
             nowIndicator
             slotMinTime="10:00:00"
-            slotMaxTime="20:00:00"
+            slotMaxTime="21:00:00"
             slotDuration="00:30:00"
             slotLabelInterval="01:00"
             slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}

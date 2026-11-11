@@ -121,7 +121,7 @@ async function main() {
           colaboradorId: colaborador.id,
           diaSemana,
           inicio: "10:00",
-          fim: "20:00", // o último corte começa às 19:00 (ver CalculadoraDisponibilidadeService)
+          fim: "19:00", // última hora de INÍCIO: o serviço pode acabar depois (ver CalculadoraDisponibilidadeService)
         },
       });
     }

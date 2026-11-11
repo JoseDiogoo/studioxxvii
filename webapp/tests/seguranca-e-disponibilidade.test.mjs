@@ -7,18 +7,19 @@ import { marcarSchema, moverAgendamentoSchema } from "@/presentation/validation/
 const horarios = [{ colaboradorId: "c1", inicio: "10:00", fim: "13:00" }];
 const servico = (duracaoMinutos) => [{ servicoId: "s1", elegiveis: ["c1"], duracaoMinutos }];
 
-test("horas de 30 em 30 minutos e só as que cabem no horário", () => {
+test("horas de 30 em 30 minutos até à hora de fim do horário (a última pode começar nela)", () => {
   const slots = CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({
     servicosPreparados: servico(30), horarios, agendamentos: [],
   }).map((s) => s.horaInicio);
-  assert.deepEqual(slots, ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30"]);
+  assert.deepEqual(slots, ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00"]);
 });
 
-test("serviço de 45 min não oferece a última meia hora", () => {
+test("serviço de 45 min também pode começar na última hora do horário e acabar depois", () => {
   const slots = CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({
     servicosPreparados: servico(45), horarios, agendamentos: [],
   }).map((s) => s.horaInicio);
-  assert.equal(slots.at(-1), "12:00");
+  assert.equal(slots.at(-1), "13:00"); // acaba às 13:45, depois do fim do horário
+  assert.ok(!slots.includes("13:30"));
 });
 
 test("hora marcada (e as que se sobrepõem) desaparece; marcação cancelada liberta", () => {
@@ -41,25 +42,26 @@ test("depois de um corte de 45 min a hora seguinte é logo a do fim dele (sem 15
     servicosPreparados: servico(45), horarios, agendamentos: marcado,
   }).map((s) => s.horaInicio);
   assert.ok(slots.includes("10:45") && !slots.includes("10:00") && !slots.includes("10:30"));
-  // continua sem passar do fecho (13:00): um serviço de 45 min não começa depois das 12:15
-  assert.ok(slots.every((h) => h <= "12:15"));
+  // nunca começa depois da hora de fim do horário (13:00)
+  assert.ok(slots.every((h) => h <= "13:00"));
 });
 
-test("serviço de 1h20 (Pack 27) só começa se acabar até ao fecho", () => {
+test("Pack 27 (1h20) pode começar às 13:00, a última hora do horário, e acabar depois", () => {
   const slots = CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({
     servicosPreparados: servico(80), horarios, agendamentos: [],
-  }).map((s) => s.horaInicio);
-  assert.equal(slots.at(-1), "11:30"); // 11:30 + 1h20 = 12:50
+  }).map((h) => h.horaInicio);
+  assert.equal(slots.at(-1), "13:00");
 });
 
-test("até às 20:00 de trabalho: a última marcação começa às 19:00 e nenhum serviço acaba depois das 20:00", () => {
-  const h = [{ colaboradorId: "c1", inicio: "10:00", fim: "20:00" }];
-  const horas = (duracaoMinutos) =>
-    CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({ servicosPreparados: servico(duracaoMinutos), horarios: h, agendamentos: [] }).map((s) => s.horaInicio);
-  assert.equal(horas(45).at(-1), "19:00"); // 19:00 + 45 = 19:45
-  assert.equal(horas(30).at(-1), "19:00"); // nunca 19:30, mesmo que coubesse
-  assert.equal(horas(80).at(-1), "18:30"); // 18:30 + 1h20 = 19:50; 19:00 acabava às 20:20
-  assert.ok(!horas(45).includes("20:00"));
+test("ninguém começa depois da hora de fim do horário (19:00), nem à hora 'seguinte' a uma marcação", () => {
+  const h = [{ colaboradorId: "c1", inicio: "10:00", fim: "19:00" }];
+  const marcado = [{ colaboradorId: "c1", horaInicio: "18:30", horaFim: "19:15", status: "CONFIRMADO" }];
+  const horas = (d, ag = []) =>
+    CalculadoraDisponibilidadeService.calcularSlotsDisponiveis({ servicosPreparados: servico(d), horarios: h, agendamentos: ag }).map((x) => x.horaInicio);
+  assert.equal(horas(45).at(-1), "19:00");
+  assert.equal(horas(80).at(-1), "19:00"); // Pack 27 às 19:00 acaba às 20:20
+  assert.ok(!horas(30).includes("20:00") && !horas(30).includes("19:30"));
+  assert.ok(!horas(30, marcado).includes("19:15")); // o fim da marcação (19:15) já passa das 19:00
 });
 
 test("IP vem de X-Real-IP; X-Forwarded-For falsificado é ignorado", () => {
