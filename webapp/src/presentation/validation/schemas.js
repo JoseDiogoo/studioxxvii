@@ -31,6 +31,25 @@ export const clienteSchema = z.object({
   observacoes: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
+// Marcação registada pelo barbeiro: o telefone é opcional (quem pede por Instagram nem sempre o dá).
+export const marcarEquipaSchema = z.object({
+  cliente: z.object({
+    nome: z.string().trim().min(2).max(120),
+    telefone: z
+      .string()
+      .trim()
+      .max(30)
+      .transform((v) => v.replace(/[\s().-]/g, ""))
+      .refine((v) => v === "" || /^\+?\d{9,15}$/.test(v), "Telefone inválido.")
+      .optional(),
+    email: z.string().trim().email().max(160).optional().or(z.literal("")),
+    observacoes: z.string().trim().max(500).optional().or(z.literal("")),
+  }),
+  servicos: z.array(servicoSelecionadoSchema).min(1).max(3),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  horaInicio: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+});
+
 export const marcarSchema = z.object({
   cliente: clienteSchema,
   servicos: z.array(servicoSelecionadoSchema).min(1).max(3),

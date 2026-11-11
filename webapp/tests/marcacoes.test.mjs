@@ -69,6 +69,26 @@ test("limite de marcações pendentes por telefone", async () => {
   await assert.rejects(useCase.execute(pedido()), RegraNegocioError);
 });
 
+test("marcação do barbeiro ignora o limite de pendentes mas respeita horas ocupadas", async () => {
+  const { useCase, criadas } = montar({ pendentes: 3 });
+  const r = await useCase.execute(pedido({ porEquipa: true }));
+  assert.equal(r.total, 15);
+  assert.equal(criadas.length, 1);
+  const ocupada = montar({ ocupados: [{ colaboradorId: "c1", horaInicio: "11:00", horaFim: "11:30", status: "CONFIRMADO" }] });
+  await assert.rejects(ocupada.useCase.execute(pedido({ porEquipa: true })), SlotIndisponivelError);
+});
+
+test("marcação do barbeiro não avisa o barbeiro, mas avisa o cliente se tiver email", async () => {
+  const avisos = [];
+  const { useCase } = montar();
+  useCase.notificationGateway = {
+    enviarConfirmacao: async (d) => avisos.push(["cliente", d.email]),
+    enviarNovaMarcacaoBarbeiro: async () => avisos.push(["barbeiro"]),
+  };
+  await useCase.execute(pedido({ porEquipa: true, cliente: { nome: "Rui", telefone: "+351912345678", email: "rui@x.pt" } }));
+  assert.deepEqual(avisos, [["cliente", "rui@x.pt"]]);
+});
+
 test("honeypot preenchido finge sucesso e não grava nada", async () => {
   const { useCase, criadas } = montar();
   const r = await useCase.execute(pedido({ empresaSite: "spam.com" }));

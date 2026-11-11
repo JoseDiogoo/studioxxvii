@@ -7,6 +7,7 @@ import styles from "./equipa.module.css";
 
 const TABS = [
   { href: "/equipa", label: "Agenda", ativo: (p) => p === "/equipa" },
+  { href: "/equipa/nova", label: "Nova marcação", ativo: (p) => p.startsWith("/equipa/nova") },
   { href: "/equipa/historico", label: "Histórico", ativo: (p) => p.startsWith("/equipa/historico") },
 ];
 

@@ -1,5 +1,6 @@
 import { HttpResponse } from "../http/HttpResponse";
-import { marcarSchema } from "../validation/schemas";
+import crypto from "crypto";
+import { marcarSchema, marcarEquipaSchema } from "../validation/schemas";
 import { log, mascararTelefone } from "@/infrastructure/logger";
 import { RateLimiter } from "@/infrastructure/security/RateLimiter";
 import { PostgresAgendamentoRepository } from "@/infrastructure/database/repositories/PostgresAgendamentoRepository";
@@ -28,6 +29,34 @@ export class AgendamentoController {
       salaoRepository: this.salaoRepo,
       notificationGateway: this.notificationGateway,
     });
+  }
+
+  /** Marcação feita pelo barbeiro na área da equipa (a sessão já foi verificada na rota). */
+  async marcarEquipa(req, colaboradorNome) {
+    const parsed = marcarEquipaSchema.safeParse(await HttpResponse.lerJson(req));
+    if (!parsed.success) {
+      log("aviso", "equipa", "marcação manual: formulário inválido", { campos: parsed.error.issues.map((i) => i.path.join(".")) });
+      return HttpResponse.badRequest(parsed.error.issues[0]?.message || "Dados do formulário inválidos.");
+    }
+    const dados = parsed.data;
+    // Sem telefone: usa um identificador único, para dois clientes sem telefone não ficarem fundidos num só.
+    const semTelefone = !dados.cliente.telefone;
+    if (semTelefone) dados.cliente.telefone = `sem-tel-${crypto.randomUUID().slice(0, 8)}`;
+
+    try {
+      const resultado = await this.criarAgendamentoUseCase.execute({ ...dados, porEquipa: true });
+      log("info", "equipa", "marcação manual criada pelo barbeiro", {
+        por: colaboradorNome,
+        grupoId: resultado.grupoId,
+        data: resultado.data,
+        hora: resultado.horaInicio,
+        total: resultado.total,
+        semTelefone,
+      });
+      return HttpResponse.ok(resultado);
+    } catch (err) {
+      return HttpResponse.tratarErro(err);
+    }
   }
 
   async marcarPublico(req) {

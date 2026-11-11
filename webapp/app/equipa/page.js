@@ -364,7 +364,7 @@ export default function AgendaPage() {
               </span>
             </div>
             <div className={styles.servicoNome}>{aberta.servico?.titulo}</div>
-            {aberta.cliente?.telefone && (
+            {aberta.cliente?.telefone && !aberta.cliente.telefone.startsWith("sem-tel-") && (
               <a className={styles.telefone} href={`tel:${aberta.cliente.telefone.replace(/\s/g, "")}`}>
                 {aberta.cliente.telefone}
               </a>

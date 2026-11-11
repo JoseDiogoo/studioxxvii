@@ -1177,3 +1177,113 @@
 .campo label {
   font-size: 0.75rem;
 }
+
+/* ---------- Nova marcação (barbeiro regista cortes pedidos por Instagram/WhatsApp) ---------- */
+.novaTitulo {
+  font-family: var(--font-titulo);
+  font-size: 1.6rem;
+  margin: 8px 0 6px;
+}
+.novaTexto {
+  color: var(--suave);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+.novaForm {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 40px;
+}
+.novaBloco {
+  border: 1px solid var(--linha);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 16px;
+  margin: 0;
+  min-width: 0;
+}
+.novaBloco legend {
+  padding: 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ouro);
+}
+.novaServicos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.novaServico {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--linha);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+}
+.novaServico small {
+  color: var(--suave);
+}
+.novaServicoOn {
+  border-color: var(--ouro);
+  background: rgba(201, 163, 95, 0.12);
+}
+.novaTotal {
+  margin: 12px 0 0;
+  color: var(--ouro-claro);
+  font-weight: 700;
+}
+.novaDica {
+  color: var(--suave);
+  font-size: 0.9rem;
+  margin: 12px 0 0;
+}
+.novaHoras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.novaHora {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--linha);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+}
+.novaHoraOn {
+  background: var(--ouro);
+  border-color: var(--ouro);
+  color: #141210;
+  font-weight: 700;
+}
+.novaServico:focus-visible,
+.novaHora:focus-visible {
+  outline: 2px solid var(--ouro);
+  outline-offset: 2px;
+}
+.novaFeito {
+  text-align: center;
+  padding: 40px 0;
+}
+.novaFeitoIcone {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  border: 1px solid var(--verde);
+  color: var(--verde);
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+}

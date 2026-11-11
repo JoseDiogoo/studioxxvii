@@ -3,8 +3,17 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/infrastructure/security/AuthOptions";
 import { PostgresAgendamentoRepository } from "@/infrastructure/database/repositories/PostgresAgendamentoRepository";
 import { HttpResponse } from "@/presentation/http/HttpResponse";
+import { AgendamentoController } from "@/presentation/controllers/AgendamentoController";
 
 const repo = new PostgresAgendamentoRepository();
+const controller = new AgendamentoController();
+
+// O barbeiro regista um corte pedido por Instagram/WhatsApp: a hora fica ocupada e deixa de aparecer aos clientes.
+export async function POST(req) {
+  const session = await getServerSession(authOptions);
+  if (!session) return HttpResponse.unauthorized("Não autenticado.");
+  return controller.marcarEquipa(req, session.user?.name);
+}
 
 export async function GET(req) {
   const session = await getServerSession(authOptions);

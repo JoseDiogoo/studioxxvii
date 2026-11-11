@@ -40,7 +40,9 @@ export class CriarAgendamentoPublicoUseCase {
     this.notificationGateway = notificationGateway;
   }
 
-  async execute({ cliente, servicos, data, horaInicio, empresaSite = null }) {
+  // porEquipa: marcação registada pelo barbeiro (pedido por Instagram/WhatsApp). Ocupa a hora como qualquer outra,
+  // mas não tem limite de pendentes, aceita horas já passadas hoje e não avisa o barbeiro (foi ele que a criou).
+  async execute({ cliente, servicos, data, horaInicio, empresaSite = null, porEquipa = false }) {
     // 1. Honeypot check
     if (empresaSite) {
       return {
@@ -60,12 +62,12 @@ export class CriarAgendamentoPublicoUseCase {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || Number.isNaN(new Date(`${data}T00:00:00.000Z`).getTime())) {
       throw new RegraNegocioError("Data inválida.");
     }
-    if (data < hoje || data > somarDiasChave(hoje, MAX_DIAS_ANTECEDENCIA) || (data === hoje && horaInicio <= agora)) {
+    if (data < hoje || data > somarDiasChave(hoje, MAX_DIAS_ANTECEDENCIA) || (!porEquipa && data === hoje && horaInicio <= agora)) {
       throw new SlotIndisponivelError("Essa data ou hora já não está disponível. Escolhe outra.");
     }
 
     // Limite de marcações pendentes por telefone: um robô com IPs diferentes não consegue encher a agenda.
-    const pendentes = await this.agendamentoRepository.contarPendentesPorTelefone(cliente.telefone, hoje);
+    const pendentes = porEquipa ? 0 : await this.agendamentoRepository.contarPendentesPorTelefone(cliente.telefone, hoje);
     if (pendentes >= MAX_PENDENTES_POR_TELEFONE) {
       throw new RegraNegocioError(
         `Já tens ${MAX_PENDENTES_POR_TELEFONE} marcações por realizar. Espera pela próxima antes de marcar outra.`
@@ -170,7 +172,7 @@ export class CriarAgendamentoPublicoUseCase {
         horaInicio,
       }).catch(() => {});
 
-      this.notificationGateway.enviarNovaMarcacaoBarbeiro({
+      if (!porEquipa) this.notificationGateway.enviarNovaMarcacaoBarbeiro({
         nomeCliente: cliente.nome,
         telefoneCliente: cliente.telefone,
         servicoTitulo: titulos,
