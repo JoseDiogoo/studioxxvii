@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import styles from "../equipa.module.css";
 import EquipaShell from "../EquipaShell";
+import { formatarDuracao } from "../../duracao";
 
 const hojeChave = () => {
   const d = new Date();
@@ -159,7 +160,7 @@ export default function NovaMarcacaoPage() {
                   onClick={() => alternar(s.id)}
                 >
                   <span>{s.titulo}</span>
-                  <small>{Number(s.preco)}€ · {s.duracaoMinutos} min</small>
+                  <small>{Number(s.preco)}€ · {formatarDuracao(s.duracaoMinutos)}</small>
                 </button>
               );
             })}

@@ -10,6 +10,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import ptLocale from "@fullcalendar/core/locales/pt";
 import styles from "./equipa.module.css";
 import EquipaShell from "./EquipaShell";
+import { formatarDuracao } from "../duracao";
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 const VISTAS = [
@@ -409,7 +410,7 @@ function Cartao({ m, proxima, abrir }) {
     >
       <span className={styles.corteHora}>
         {m.horaInicio}
-        <small>{duracao} min</small>
+        <small>{formatarDuracao(duracao)}</small>
       </span>
       <span className={styles.corteInfo}>
         {proxima && <em className={styles.aSeguir}>A seguir</em>}

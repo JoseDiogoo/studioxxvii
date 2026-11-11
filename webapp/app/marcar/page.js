@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./marcar.module.css";
+import { formatarDuracao } from "../duracao";
 
 const NOMES_MES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -325,7 +326,7 @@ function PassoServicos({ servicos, servicoId, escolherServico }) {
             <span className={styles.opcaoNome}>{s.titulo}</span>
             <span className={styles.opcaoLinha}>
               <span className={styles.opcaoPreco}>{formatarEuros(s.preco)}</span>
-              <span className={styles.opcaoMeta}>{s.duracaoMinutos} min</span>
+              <span className={styles.opcaoMeta}>{formatarDuracao(s.duracaoMinutos)}</span>
             </span>
           </button>
         ))}
