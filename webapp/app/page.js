@@ -9,15 +9,15 @@ import styles from "./home.module.css";
 
 // Preços e durações vêm da BD (fonte única). Se a BD falhar, o site continua a mostrar isto.
 const SERVICOS_FALLBACK = [
-  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Corte Criança", preco: 15, duracaoMinutos: 45 },
-  { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 45 },
-  { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 45 },
-  { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 60 },
-  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 60 },
-  { titulo: "Só Barba", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Black Mask", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Pack 27", preco: 30, duracaoMinutos: 80 },
+  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 30, descricao: "Corte de cabelo com um só pente." },
+  { titulo: "Corte Criança", preco: 15, duracaoMinutos: 45, descricao: "Corte de cabelo para crianças." },
+  { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 45, descricao: "Corte de cabelo personalizado, ao teu estilo." },
+  { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 45, descricao: "Corte de cabelo com lavagem capilar." },
+  { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 60, descricao: "Corte de cabelo e barba." },
+  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 60, descricao: "Corte de cabelo, barba com vaporizador e toalha quente, e lavagem." },
+  { titulo: "Só Barba", preco: 10, duracaoMinutos: 30, descricao: "Arranjo de barba." },
+  { titulo: "Black Mask", preco: 10, duracaoMinutos: 30, descricao: "Limpeza profunda da pele: remove impurezas e controla a oleosidade." },
+  { titulo: "Pack 27", preco: 30, duracaoMinutos: 80, descricao: "Corte de cabelo, sobrancelha à navalha, barba com vaporizador e toalha quente, e lavagem." },
 ];
 
 // A faixa de fotos lê a pasta public/fotos/galeria: basta largar lá um ficheiro (jpg/png/webp) e ele passa a aparecer.
@@ -55,7 +55,7 @@ async function obterServicos() {
     const lista = await postgresDb.servico.findMany({
       where: { ativo: true },
       orderBy: [{ preco: "asc" }, { titulo: "asc" }],
-      select: { titulo: true, preco: true, duracaoMinutos: true },
+      select: { titulo: true, descricao: true, preco: true, duracaoMinutos: true },
     });
     return lista.length ? lista.map((s) => ({ ...s, preco: Number(s.preco) })) : SERVICOS_FALLBACK;
   } catch {
@@ -127,7 +127,10 @@ export default async function Home() {
           <ul className={styles.servicos}>
             {servicos.map((s) => (
               <li key={s.titulo} className={styles.servico}>
-                <span className={styles.servicoNome}>{s.titulo}</span>
+                <span className={styles.servicoTexto}>
+                  <span className={styles.servicoNome}>{s.titulo}</span>
+                  {s.descricao && <span className={styles.servicoDescricao}>{s.descricao}</span>}
+                </span>
                 <span className={styles.servicoPreco}>{euros(s.preco)}</span>
               </li>
             ))}

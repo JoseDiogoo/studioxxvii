@@ -324,6 +324,7 @@ function PassoServicos({ servicos, servicoId, escolherServico }) {
             onClick={() => escolherServico(s.id)}
           >
             <span className={styles.opcaoNome}>{s.titulo}</span>
+            {s.descricao && <span className={styles.opcaoDescricao}>{s.descricao}</span>}
             <span className={styles.opcaoLinha}>
               <span className={styles.opcaoPreco}>{formatarEuros(s.preco)}</span>
               <span className={styles.opcaoMeta}>{formatarDuracao(s.duracaoMinutos)}</span>

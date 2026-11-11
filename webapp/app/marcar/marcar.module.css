@@ -500,3 +500,9 @@
 .opcaoMeta {
   font-size: 0.75rem;
 }
+
+.opcaoDescricao {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  opacity: 0.7;
+}

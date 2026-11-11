@@ -12,15 +12,15 @@ if (DEFAULT_PASSWORD.length < 10) {
 }
 
 const SERVICOS = [
-  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Corte Criança", preco: 15, duracaoMinutos: 45 },
-  { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 45 },
-  { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 45 },
-  { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 60 },
-  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 60 },
-  { titulo: "Só Barba", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Black Mask", preco: 10, duracaoMinutos: 30 },
-  { titulo: "Pack 27", preco: 30, duracaoMinutos: 80 },
+  { titulo: "Rapar Cabelo", preco: 10, duracaoMinutos: 30, descricao: "Corte de cabelo com um só pente." },
+  { titulo: "Corte Criança", preco: 15, duracaoMinutos: 45, descricao: "Corte de cabelo para crianças." },
+  { titulo: "Corte Cabelo", preco: 15, duracaoMinutos: 45, descricao: "Corte de cabelo personalizado, ao teu estilo." },
+  { titulo: "Corte + Lavagem", preco: 18, duracaoMinutos: 45, descricao: "Corte de cabelo com lavagem capilar." },
+  { titulo: "Corte + Barba", preco: 20, duracaoMinutos: 60, descricao: "Corte de cabelo e barba." },
+  { titulo: "Corte + Barba + Lavagem", preco: 23, duracaoMinutos: 60, descricao: "Corte de cabelo, barba com vaporizador e toalha quente, e lavagem." },
+  { titulo: "Só Barba", preco: 10, duracaoMinutos: 30, descricao: "Arranjo de barba." },
+  { titulo: "Black Mask", preco: 10, duracaoMinutos: 30, descricao: "Limpeza profunda da pele: remove impurezas e controla a oleosidade." },
+  { titulo: "Pack 27", preco: 30, duracaoMinutos: 80, descricao: "Corte de cabelo, sobrancelha à navalha, barba com vaporizador e toalha quente, e lavagem." },
 ];
 
 const DIAS_TERCA_A_SABADO = [2, 3, 4, 5, 6];
@@ -52,7 +52,7 @@ async function main() {
     if (servico) {
       servico = await prisma.servico.update({
         where: { id: servico.id },
-        data: { preco: s.preco, duracaoMinutos: s.duracaoMinutos, ativo: true },
+        data: { preco: s.preco, duracaoMinutos: s.duracaoMinutos, descricao: s.descricao, ativo: true },
       });
     } else {
       servico = await prisma.servico.create({

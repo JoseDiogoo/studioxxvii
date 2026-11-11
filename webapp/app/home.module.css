@@ -626,3 +626,15 @@
   min-height: 44px;
   min-width: 44px;
 }
+
+.servicoTexto {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.servicoDescricao {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  opacity: 0.7;
+}
